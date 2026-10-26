@@ -1,0 +1,60 @@
+[project]
+name = "projeto_ml"
+version = "0.1.0"
+description = "Pipeline modular de analise exploratoria e modelagem preditiva para ERPs de PMEs"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "autogluon-tabular>=1.1.0",
+    "encode>=0.0.0",
+    "fastapi>=0.162.0",
+    "numpy>=1.26.0",
+    "pandas>=2.2.0",
+    "pyjwt>=2.15.1",
+    "scikit-learn>=1.4.0",
+    "seaborn>=0.13.0",
+    "shap>=0.50.0",
+    "sqlalchemy>=2.0.0",
+    "statsmodels>=0.14.0",
+    "tabulate>=0.10.0",
+    "umap-learn>=0.5.12",
+    "uvicorn[standard]>=0.54.0",
+    "xgboost>=3.2.0",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.8.0",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+# Blindagem: impede o scanner de inspecionar dependências e ambientes virtuais
+exclude = [
+    ".git",
+    "ambiente_virtual",
+    ".venv",
+    "__pycache__",
+    "notebooks",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # Erros de sintaxe e estilo PEP 8 (Error)
+    "W",   # Avisos de estilo PEP 8 (Warning)
+    "F",   # Detecção de variáveis e imports não utilizados (Pyflakes)
+    "I",   # Ordenação semântica de importações (isort)
+    "D",   # Fiscalização de documentação interna (pydocstyle)
+    "UP",  # Modernização de sintaxe para Python recente (pyupgrade)
+    "N",   # Fiscalização de nomes de classes, funções e módulos (pep8-naming)
+]
+ignore = [
+    "D100", # Permite docstring resumida
+    "D104", # Não exige docstring no __init__.py
+    "D205", # Aceita resumo quebrado em mais de uma linha física
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

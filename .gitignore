@@ -1,0 +1,28 @@
+# Ambientes virtuais isolados
+ambiente_virtual/
+.venv/
+env/
+
+# Caches e arquivos temporários do Python
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+
+# Bloqueio estrito de dados pesados e confidenciais (LGPD / Sigilo Industrial)
+dados/brutos/sql/*
+dados/brutos/csv/*
+dados/processados/*
+!dados/brutos/sql/.gitkeep
+!dados/brutos/csv/.gitkeep
+!dados/processados/.gitkeep
+
+# Artefatos pesados de modelos e logs
+modelos/*
+!modelos/.gitkeep
+logs/*
+!logs/.gitkeep
+
+# Arquivos de sistema operacional
+.DS_Store
+Thumbs.db

@@ -1,0 +1,20 @@
+# Ambientes virtuais locais (o Docker compilará seu próprio ambiente isolado)
+.venv/
+venv/
+env/
+
+# Arquivos de cache compilados do Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Históricos do Git e IDEs de desenvolvimento
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Relatórios analíticos e dados brutos locais (preserva apenas artefatos de produção)
+relatorios/
+dados/
+notebooks/

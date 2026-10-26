@@ -1,0 +1,25 @@
+services:
+  # Identificador do microserviço de inferência clínica
+  api-predicao-risco:
+    # Nome oficial do contêiner instanciado no sistema
+    container_name: api_predicao_risco_cardiovascular
+    # Constrói a imagem localmente usando as instruções do Dockerfile
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Mapeia a porta 8000 do contêiner para a porta 8000 do Fedora
+    ports:
+      - "8000:8000"
+    # Política de reinicialização automática em caso de oscilações
+    restart: unless-stopped
+    # Variáveis de ambiente injetadas no contêiner
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CHAVE_MESTRE_SUPER_SECRETA_PRODUCAO=CHAVE_MESTRE_SUPER_SECRETA_PRODUCAO_MINIMO_32_BYTES_2026
+    # Sonda de prontidão interna (Healthcheck) que audita a saúde do microserviço a cada 30 segundos
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/saude/prontidao')\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
