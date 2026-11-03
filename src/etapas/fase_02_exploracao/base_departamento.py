@@ -1,123 +1,78 @@
-"""Módulo da Classe Base para Diagnósticos Departamentais de ERP.
-
-Define a fundação orientada a objetos para todos os 10 departamentos,
-provendo injeção automática de dependências das ferramentas do núcleo
-(leitura de arquivos, renderização visual e testes estatísticos) e padronizando
-o contrato de devolução dos laudos periciais com métricas tabulares e figuras.
-"""
-
-# 'from abc' importa classes e decoradores para construção formal de contratos abstratos
-# na linguagem Python[cite: 2].
-# 'ABC' estabelece a classe base abstrata e 'abstractmethod' força a implementação nas
-# classes filhas[cite: 2].
-# 'import logging' importa o sistema de rastreabilidade e mensagens operacionais no
-# console do Python[cite: 2].
-import logging
-from abc import ABC, abstractmethod
-
-# 'from pathlib import Path' fornece a manipulação orientada a objetos e portável de
-# caminhos de arquivos e pastas[cite: 2].
+# 'from' indica a biblioteca de origem; 'pathlib' manipula diretórios e caminhos de arquivos de forma orientada a objetos.
+# 'import' traz a classe 'Path' para representar diretórios e caminhos compatíveis com Windows, Linux e Mac.
 from pathlib import Path
 
-# 'from typing import Any, Dict' importa anotações de tipagem estática para documentar
-# dicionários heterogêneos de saída[cite: 3, 5].
-from typing import Any
+# 'from' acessa o módulo 'typing' da biblioteca padrão do Python para suporte a anotações de tipagem estática.
+# 'import' carrega 'Any' e 'Dict' para documentar estruturas de retorno.
+from typing import Any, Dict
 
-# 'from src...' importa a classe de leitura de tabelas CSV com tratamento defensivo de
-# codificações do núcleo[cite: 2].
+# 'from' acessa o módulo 'abc' da biblioteca padrão para viabilizar herança abstrata formal na linguagem Python.
+# 'import' traz 'ABC' (classe base abstrata) e 'abstractmethod' (decorador de métodos obrigatórios).
+from abc import ABC, abstractmethod
+
+# 'import' traz o módulo 'logging' nativo para registrar mensagens operacionais com carimbo de auditoria no terminal.
+import logging
+
+# Importação da ferramenta de leitura tolerante a variações estruturais de CSV do núcleo compartilhado.
 from src.nucleo.acesso_dados.leitor_arquivos import LeitorArquivosTabulares
 
-# 'from src...' importa a calculadora estatística para testes de hipóteses formais e
-# análise univariada[cite: 2].
+# Importação da calculadora estatística para testes de hipóteses e medidas descritivas do núcleo.
 from src.nucleo.diagnostico_estatistico.testes_hipoteses import CalculadoraEstatistica
 
-# 'from src...' importa o motor gráfico padronizado para geração de figuras com alta
-# resolução visual (300 DPI)[cite: 2].
-from src.nucleo.diagnostico_estatistico.visualizacao_grafica import (
-    GeradorVisualizacaoGrafica,
-)
+# Importação do gerador gráfico padronizado para estilização corporativa uniforme em alta resolução (300 DPI).
+from src.nucleo.diagnostico_estatistico.visualizacao_grafica import GeradorVisualizacaoGrafica
 
-# 'logging.basicConfig' configura a formatação padronizada dos registros emitidos no
-# console do terminal[cite: 2].
+# Importação do adaptador universal de ERPs para casamento semântico e recorte temporal de dados reais.
+from src.etapas.fase_02_exploracao.adaptador_universal_erp import AdaptadorUniversalERP
+
+# 'logging.basicConfig' parametriza a formatação dos registros no console corporativo.
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s — [%(levelname)s] — %(message)s",
 )
 
 
-# 'class BaseDepartamento(ABC)' declara a classe base abstrata com herança formal de
-# ABC[cite: 2].
+# 'class BaseDepartamento(ABC)' declara a classe base abstrata que injeta infraestrutura em todos os setores.
 class BaseDepartamento(ABC):
-    """Classe base abstrata que injeta infraestrutura compartilhada em todos os
-    departamentos analíticos[cite: 2].
-    """
+    """Classe base abstrata com governança de pastas estruturadas por cliente e fase analítica."""
 
-    # 'def __init__(...)' é o construtor responsável por parametrizar os diretórios e
-    # instanciar as ferramentas do núcleo[cite: 2].
+    # 'def __init__(...)' é o construtor responsável por registrar diretórios e instanciar as ferramentas.
     def __init__(
         self,
         pasta_dados_brutos: Path,
         pasta_relatorios: Path,
         nome_departamento: str,
+        fase_projeto: str = "fase_02",
     ) -> None:
-        """Inicializa a infraestrutura de apoio e diretórios do departamento
-        analítico[cite: 2].
-
-        Args:
-            pasta_dados_brutos (Path): Diretório onde residem as tabelas brutas
-            extraídas do ERP[cite: 2].
-            pasta_relatorios (Path): Diretório base de saída onde serão criadas as
-            pastas setoriais de laudos[cite: 2].
-            nome_departamento (str): Identificador textual canônico do departamento (ex:
-            'comercial', 'financeiro')[cite: 2].
-        """
-        # Armazena a rota física da pasta onde residem os arquivos CSV originais da
-        # empresa[cite: 2].
+        """Inicializa o departamento com a nova hierarquia relatorios/<nome_banco>/<fase>/<departamento>/."""
         self.pasta_dados_brutos = pasta_dados_brutos
-
-        # Armazena o identificador canônico em texto do departamento sob auditoria[cite:
-        # 2].
         self.nome_departamento = nome_departamento
+        self.fase_projeto = fase_projeto
 
-        # Constrói o caminho específico da subpasta do departamento dentro de relatórios
-        # (ex: 'relatorios/figuras/comercial/')[cite: 2].
-        self.pasta_saida = pasta_relatorios / self.nome_departamento
+        # Instancia o adaptador universal sobre o diretório de dados para descobrir o nome real do banco/cliente.
+        self.adaptador = AdaptadorUniversalERP(pasta_dados_erp=self.pasta_dados_brutos)
+        self.nome_banco = self.adaptador.nome_banco
 
-        # Cria a pasta setorial no sistema de arquivos caso ainda não exista, evitando
-        # erros de gravação de imagens[cite: 2].
+        # HIERARQUIA DE DIRETÓRIOS POR CLIENTE E FASE:
+        # relatorios/<nome_banco>/<fase_projeto>/<nome_departamento>/
+        self.pasta_saida = pasta_relatorios / self.nome_banco / self.fase_projeto / self.nome_departamento
         self.pasta_saida.mkdir(parents=True, exist_ok=True)
 
-        # Injeta o componente responsável pela leitura e carregamento seguro de arquivos
-        # tabulares em memória[cite: 2].
+        # Injeta as ferramentas do núcleo compartilhado.
         self.leitor = LeitorArquivosTabulares()
-
-        # Injeta a calculadora estatística compartilhada para computação de parâmetros
-        # descritivos e inferenciais[cite: 2].
         self.calculadora = CalculadoraEstatistica()
-
-        # Injeta o gerador gráfico padronizado para estilização corporativa uniforme em
-        # todos os setores[cite: 2].
         self.visualizador = GeradorVisualizacaoGrafica()
 
-        # Emite uma mensagem de log informativa confirmando a instanciação e o diretório
-        # de destino do departamento[cite: 2].
         logging.info(
-            "Departamento '%s' pronto para auditoria. Destino: %s",
+            "Departamento '%s' pronto. Cliente: '%s' | Fase: '%s' | Destino: %s",
             self.nome_departamento,
+            self.nome_banco,
+            self.fase_projeto,
             self.pasta_saida,
         )
 
-    # '@abstractmethod' torna obrigatória a implementação deste método em todas as
-    # classes filhas derivadas[cite: 2].
+    # '@abstractmethod' força a implementação executiva concreta nas classes especialistas filhas.
     @abstractmethod
-    def executar_diagnostico_completo(self) -> dict[str, Any]:
-        """Coordena a execução de cálculos tabulares e geração de gráficos analíticos do
-        departamento[cite: 2, 3].
-
-        Returns:
-            Dict[str, Any]: Laudo compilado contendo métricas numéricas, tabelas e
-            caminhos dos arquivos gráficos.
-        """
-        # Reticências indicam que a lógica executiva concreta pertence exclusivamente às
-        # classes especialistas filhas[cite: 2].
+    def executar_diagnostico_completo(self) -> Dict[str, Any]:
+        """Coordena a execução de cálculos tabulares e geração de gráficos analíticos do departamento."""
         ...

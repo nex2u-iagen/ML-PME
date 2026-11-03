@@ -1,215 +1,125 @@
-"""Módulo de Transformadores Customizados para Aprendizado de Máquina.
+"""Módulo de Transformadores Customizados para Machine Learning (Núcleo Compartilhado).
 
-Implementa componentes de engenharia de atributos e limpeza de dados
-aderentes ao protocolo formal do Scikit-Learn, garantindo integração
-nativa com Pipelines e isolamento absoluto contra Data Leakage.
+Responsabilidade Única: Implementar transformadores matemáticos e adaptadores
+de dados compatíveis com a API formal do Scikit-Learn (BaseEstimator e TransformerMixin),
+permitindo serialização íntegra via Joblib e integração sem atritos de metadados[cite: 7, 8, 10].
 """
 
-# 'import' carrega o módulo interno 'logging' da biblioteca padrão do Python.
-# O logging registra mensagens operacionais e de auditoria no terminal de forma
-# profissional.
+# 'import' traz o módulo 'logging' nativo da biblioteca padrão para registro técnico no console.
 import logging
 
-# 'from' acessa o módulo 'typing' da biblioteca padrão do Python.
-# 'Self' (Python 3.11+) representa o tipo da própria classe retornada por seus métodos
-# internos.
-from typing import Self
-
-# 'import' traz a biblioteca fundamental 'numpy', responsável pelo processamento
-# matricial e vetorial rápido.
-# 'as' define o apelido universal 'np', padrão consagrado pela comunidade científica.
-import numpy as np
-
-# 'import' traz a biblioteca 'pandas', padrão da indústria para manipulação tabular de
-# dados.
-# 'as' define o apelido clássico 'pd' para encurtar comandos de manipulação de tabelas.
-# 'from' navega até o submódulo base do Scikit-Learn ('sklearn.base').
-# 'BaseEstimator' concede ao nosso objeto compatibilidade com clonagem e otimizadores de
-# hiperparâmetros.
-# 'TransformerMixin' injeta automaticamente o método 'fit_transform()' combinando
-# aprendizado e execução.
+# 'from' acessa as classes-base estruturais do Scikit-Learn para construção de estimadores compatíveis.
+# 'BaseEstimator' provê métodos padrão de clonagem e inspeção de hiperparâmetros (get_params, set_params).
+# 'TransformerMixin' injeta automaticamente o método composto 'fit_transform()' ao implementar 'fit()' e 'transform()'.
 from sklearn.base import BaseEstimator, TransformerMixin
 
-# 'logging.basicConfig' padroniza o formato visual das mensagens emitidas no console.
-# 'level=logging.INFO' assegura que avisos informativos e confirmações de etapas sejam
-# exibidos na tela.
-# 'format' dita o modelo da mensagem: data/hora — [gravidade] — descrição detalhada do
-# evento.
+# 'import' traz a biblioteca externa 'numpy' para computação vetorizada e checagem de tipos primitivos[cite: 7, 8].
+# 'as' define o apelido canônico 'np'[cite: 7, 8].
+import numpy as np
+
+# 'import' traz a biblioteca externa 'pandas' para manipulação tabular e criação de DataFrames com cabeçalho[cite: 7, 8].
+# 'as' estabelece o apelido oficial 'pd'[cite: 7, 8].
+import pandas as pd
+
+# 'logging.basicConfig' parametriza a estética visual e criticidade dos registros no terminal.
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s — [%(levelname)s] — %(message)s",
 )
 
 
-# 'class' é a palavra-chave que declara um novo molde estrutural orientado a objetos.
-# 'TruncadorDeValoresExtremos' é o nome da nossa classe em Português do Brasil e estilo
-# PascalCase.
-# '(BaseEstimator, TransformerMixin)' indica 'Herança Múltipla': nossa classe herda as
-# habilidades oficiais do scikit-learn.
+# 'class' declara o transformador responsável pelo truncamento estatístico de anomalias (IQR)[cite: 7, 8].
 class TruncadorDeValoresExtremos(BaseEstimator, TransformerMixin):
-    """Transformador para truncamento (clipping) de valores atípicos baseado no IQR.
+    """Transformador customizado que trunca valores discrepantes (outliers) pela Amplitude Interquartil (IQR)[cite: 7, 8]."""
 
-    Aprende os limites estatísticos estritamente sobre a partição de treino (fit)
-    e os reaplica de maneira determinística nas partições de teste ou inferência
-    (transform).
-    """
-
-    # 'def' define o método construtor '__init__', executado no momento da instanciação
-    # da classe.
-    # 'self' referencia a instância individual sendo gerada na memória do computador.
-    # 'multiplicador_iqr: float = 1.5' exige um número decimal (float), fixando 1.5 como
-    # sensibilidade padrão de Tukey.
-    # '-> None' documenta que o construtor apenas inicializa atributos e não devolve
-    # dados.
     def __init__(self, multiplicador_iqr: float = 1.5) -> None:
-        """Inicializa o estimador configurando a sensibilidade da régua interquartil.
-
-        Args:
-            multiplicador_iqr (float, opcional): Fator multiplicador do IQR. Padrão: 1.5
-            (Tukey).
-        """
-        # 'self.multiplicador_iqr' guarda o valor do multiplicador como um atributo
-        # interno do objeto.
+        """Inicializa o truncador configurando o fator multiplicador do IQR[cite: 7, 8]."""
         self.multiplicador_iqr = multiplicador_iqr
+        self.limites_inferiores_: dict[str, float] = {}
+        self.limites_superiores_: dict[str, float] = {}
 
-        # 'self.limite_inferior_' guarda os pisos matemáticos calculados por coluna.
-        # Por convenção estrita do Scikit-Learn, atributos aprendidos no fit terminam
-        # com um sublinhado '_'.
-        # Inicializamos com 'None' (vazio) pois o aprendizado ainda não ocorreu.
-        self.limite_inferior_ = None
+    def fit(self, X: pd.DataFrame | np.ndarray, y: pd.Series | None = None) -> "TruncadorDeValoresExtremos":
+        """Calcula os quartis Q1, Q3 e as barreiras estatísticas estritamente sobre a partição de treino[cite: 7, 8]."""
+        df_local = pd.DataFrame(X) if isinstance(X, np.ndarray) else X.copy()
+        self.limites_inferiores_.clear()
+        self.limites_superiores_.clear()
 
-        # 'self.limite_superior_' guarda os tetos matemáticos calculados por coluna.
-        # Também começa como 'None' até que o método fit seja formalmente executado.
-        self.limite_superior_ = None
+        for coluna in df_local.columns:
+            serie_coluna = df_local[coluna].dropna()
+            if serie_coluna.empty or not np.issubdtype(serie_coluna.dtype, np.number):
+                continue
 
-        # Emite log confirmando a configuração do estimador.
-        logging.info(
-            "Transformador IQR inicializado com multiplicador: %.2f",
-            self.multiplicador_iqr,
-        )
+            q1 = float(serie_coluna.quantile(0.25))
+            q3 = float(serie_coluna.quantile(0.75))
+            iqr = q3 - q1
 
-    # 'def' declara o método central de aprendizado 'fit'.
-    # 'X' representa a matriz tabular contendo as variáveis preditoras contínuas
-    # (DataFrame ou NumPy Array).
-    # 'y=None' aceita o vetor alvo (opcional, exigido pela assinatura padrão do
-    # scikit-learn).
-    # '-> Self' documenta que o método devolve a própria instância calibrada para
-    # permitir encadeamento.
-    def fit(self, x, y=None) -> Self:
-        """Calcula os limites estatísticos de corte exclusivamente a partir dos dados de
-        treino.
+            chave_coluna = str(coluna)
+            self.limites_inferiores_[chave_coluna] = q1 - (self.multiplicador_iqr * iqr)
+            self.limites_superiores_[chave_coluna] = q3 + (self.multiplicador_iqr * iqr)
 
-        Args:
-            x: Conjunto de dados contendo variáveis numéricas explicativas (Pandas
-            DataFrame ou NumPy Array).
-            y: Variável dependente/alvo (não utilizada em limpezas univariadas).
-
-        Returns:
-            Self: A própria instância do transformador com os limites aprendidos e
-            memorizados.
-        """
-        # 'np.asarray' atua como vacina: converte qualquer formato (Pandas, listas) em
-        # matriz pura do NumPy.
-        x_array = np.asarray(x)
-
-        # Emite log informando o início do cálculo dos limites interquartis.
-        logging.info(
-            "Iniciando aprendizado dos limites estatísticos (fit) em %d colunas...",
-            x_array.shape[1],
-        )
-
-        # 'np.nanpercentile' calcula quartis com segurança na sintaxe universal do
-        # NumPy, ignorando nulos residuais.
-        # 'axis=0' garante que o cálculo seja feito coluna por coluna (verticalmente).
-        primeiro_quartil = np.nanpercentile(x_array, 25, axis=0)
-        terceiro_quartil = np.nanpercentile(x_array, 75, axis=0)
-
-        # 'intervalo_interquartil' calcula o IQR (Q3 - Q1), que mede o espalhamento
-        # central dos 50% intermediários.
-        intervalo_interquartil = terceiro_quartil - primeiro_quartil
-
-        # Calcula a barreira inferior: Q1 - (multiplicador * IQR).
-        # Atribuímos ao atributo com sufixo '_' para selar a memorização no objeto.
-        self.limite_inferior_ = primeiro_quartil - (
-            self.multiplicador_iqr * intervalo_interquartil
-        )
-
-        # Calcula a barreira superior: Q3 + (multiplicador * IQR).
-        # Qualquer dado além desta fronteira será considerado uma anomalia matemática.
-        self.limite_superior_ = terceiro_quartil + (
-            self.multiplicador_iqr * intervalo_interquartil
-        )
-
-        # Emite log confirmando a conclusão do treinamento.
-        logging.info(
-            "Limites de corte calculados e armazenados com sucesso no formato universal"
-            "NumPy."
-        )
-
-        # 'return self' devolve o próprio objeto agora enriquecido com a memória
-        # estatística.
         return self
 
-    # 'def' define o método executor 'transform'.
-    # 'X' recebe os dados que sofrerão o corte (seja treino, validação, teste ou novos
-    # dados de produção).
-    def transform(self, x, y=None):
-        """Aplica o corte numérico (clipping) nos dados utilizando as regras memorizadas
-        no fit.
+    def transform(self, X: pd.DataFrame | np.ndarray) -> pd.DataFrame | np.ndarray:
+        """Aplica o ceifamento (clipping) limitando valores discrepantes às fronteiras de treino[cite: 7, 8]."""
+        eh_numpy = isinstance(X, np.ndarray)
+        df_transformado = pd.DataFrame(X).copy() if eh_numpy else X.copy()
+
+        for coluna in df_transformado.columns:
+            chave_coluna = str(coluna)
+            if chave_coluna in self.limites_inferiores_ and chave_coluna in self.limites_superiores_:
+                df_transformado[coluna] = df_transformado[coluna].clip(
+                    lower=self.limites_inferiores_[chave_coluna],
+                    upper=self.limites_superiores_[chave_coluna],
+                )
+
+        return df_transformado.to_numpy() if eh_numpy else df_transformado
+
+    def get_feature_names_out(self, input_features: np.ndarray | list | None = None) -> np.ndarray:
+        """Propaga os nomes das colunas sem alteração para manter o contrato do Pipeline[cite: 7, 8]."""
+        if input_features is not None:
+            return np.asarray(input_features, dtype=object)
+        return np.array(list(self.limites_superiores_.keys()), dtype=object)
+
+
+# 'class' declara o novo transformador formal especialista em reinserir cabeçalhos em arrays numéricos[cite: 7, 8, 10].
+class AdaptadorRotulosDataFrame(BaseEstimator, TransformerMixin):
+    """Adaptador de alto nível para compatibilidade entre transformadores NumPy e estimadores Pandas[cite: 8, 10]."""
+
+    # 'def __init__(...)' instancia o adaptador registrando a sequência canônica de colunas da Fase 3.
+    def __init__(self, nomes_colunas: list[str] | None = None) -> None:
+        """Inicializa o adaptador configurando a lista ordenada de colunas esperadas pelo classificador[cite: 8, 10].
 
         Args:
-            x: Dados a serem transformados sem contaminação estatística (Pandas
-            DataFrame ou NumPy Array).
-            y: Argumento ignorado, presente para conformidade com a API do Scikit-Learn.
-
-        Returns:
-            np.ndarray: Nova matriz com os valores extremos aparados dentro dos limites.
-
-        Raises:
-            RuntimeError: Se o transform for executado antes do fit ter sido concluído.
+            nomes_colunas (list[str], opcional): Lista com os nomes dos atributos gerados na Fase 3.
         """
-        # 'if' verifica defensivamente se os limites já existem na memória do objeto.
-        if self.limite_inferior_ is None or self.limite_superior_ is None:
-            # Emite log de erro crítico no terminal.
-            logging.error("Tentativa de transformação antes do ajuste (fit).")
-            # 'raise' interrompe o programa levantando uma exceção de estado de execução
-            # inválido (RuntimeError).
-            raise RuntimeError(
-                "O transformador deve ser ajustado com o método 'fit()' antes de"
-                "executar 'transform()'."
-            )
+        # Armazena a lista de colunas como atributo de instância serializável pelo Joblib/Pickle[cite: 8, 10].
+        self.nomes_colunas = nomes_colunas
 
-        # Converte e cria uma cópia da matriz para não alterar os dados originais
-        # acidentalmente na memória.
-        x_array = np.asarray(x).copy()
+    # 'def fit(...)' atende ao contrato formal do Scikit-Learn sem reter parâmetros adicionais (Stateless)[cite: 8].
+    def fit(self, X: pd.DataFrame | np.ndarray, y: pd.Series | None = None) -> "AdaptadorRotulosDataFrame":
+        """Método de ajuste sem estado (Stateless) que retorna a própria instância calibrada[cite: 7, 8]."""
+        return self
 
-        # 'np.clip' é uma função vetorizada do NumPy de extrema velocidade.
-        # Ela substitui qualquer valor menor que o piso ou maior que o teto pelas
-        # próprias barreiras matemáticas aprendidas.
-        tabela_truncada = np.clip(x_array, self.limite_inferior_, self.limite_superior_)
-
-        # 'return' entrega a nova matriz perfeitamente protegida contra anomalias
-        # numéricas.
-        return tabela_truncada
-
-    # 'def' define o método exigido pelo Scikit-Learn para rastreabilidade de atributos
-    # de saída.
-    # 'input_features' recebe a lista original de nomes das colunas vindas da etapa
-    # anterior do pipeline.
-    def get_feature_names_out(self, input_features=None):
-        """Repassa os nomes originais das colunas para manter a rastreabilidade no
-        Scikit-Learn.
-
-        Como o truncador apenas altera os valores internos sem criar ou deletar colunas,
-        ele devolve a exata mesma lista de nomes que recebeu.
+    # 'def transform(...)' re-encapsula o array do NumPy de volta para um DataFrame rotulado[cite: 8, 10].
+    def transform(self, X: pd.DataFrame | np.ndarray) -> pd.DataFrame:
+        """Converte a matriz bidimensional em DataFrame preservando os nomes das colunas de treino[cite: 8, 10].
 
         Args:
-            input_features (array-like, opcional): Lista ou array com os nomes das
-            colunas de entrada.
+            X (pd.DataFrame ou np.ndarray): Matriz numérica produzida pelo ColumnTransformer[cite: 8, 10].
 
         Returns:
-            np.ndarray ou list: Nomes das colunas de saída (idênticos aos de entrada).
+            pd.DataFrame: Tabela estruturada compatível com as regras de entrada do modelo campeão[cite: 8, 10].
         """
-        # Devolve os nomes originais para que o orquestrador consiga remontar o
-        # DataFrame do Pandas com sucesso.
-        return input_features
+        # Se os dados já forem um DataFrame com colunas preservadas, devolve-os diretamente[cite: 8].
+        if isinstance(X, pd.DataFrame):
+            return X
+
+        # Converte a matriz NumPy bruta em DataFrame associando as colunas oficiais homologadas[cite: 8, 10]:
+        return pd.DataFrame(X, columns=self.nomes_colunas)
+
+    # 'def get_feature_names_out(...)' assegura a propagação formal de metadados para a esteira[cite: 7, 8].
+    def get_feature_names_out(self, input_features: np.ndarray | list | None = None) -> np.ndarray:
+        """Propaga os nomes das colunas de saída para inspeção formal do Pipeline[cite: 7, 8]."""
+        if self.nomes_colunas:
+            return np.asarray(self.nomes_colunas, dtype=object)
+        return np.asarray(input_features, dtype=object)

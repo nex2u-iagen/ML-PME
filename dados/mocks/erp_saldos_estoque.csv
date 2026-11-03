@@ -1,0 +1,9 @@
+id_produto,descricao_produto,quantidade_saldo,custo_unitario,consumo_mensal_medio,valor_imobilizado
+201,Mesa Jantar Carvalho,12,850.0,4,10200.0
+202,Cadeira Estofada Luxo,48,180.0,16,8640.0
+203,Verniz Poliuretano 5L,25,120.0,8,3000.0
+204,Parafuso Sextavado 50mm,1200,0.45,300,540.0
+205,Puxador Alumínio Escovado,350,15.0,90,5250.0
+206,Cola Madeira Industrial,40,45.0,15,1800.0
+207,Armário 2 Portas,5,1400.0,2,7000.0
+208,Dobradiça com Amortecedor,800,6.5,220,5200.0

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>CRISP-DM Operacional — Referência com Margem de Anotação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Narrow:wght@500;600;700&family=Azeret+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--paper:#f4f3ee;--sheet:#fff;--ink:#191817;--verm:#b03a24;--rule:#cbc9c0;--rule2:#e4e2d9;
+    --grot:"Archivo",system-ui,sans-serif;--narrow:"Archivo Narrow","Arial Narrow",sans-serif;--mono:"Azeret Mono",ui-monospace,monospace}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{width:1440px;height:900px;overflow:hidden;background:var(--paper);color:var(--ink);font-family:var(--grot);font-size:13px}
+  .head{height:70px;display:flex;align-items:center;justify-content:space-between;padding:0 44px;border-bottom:1px solid var(--ink);background:var(--sheet)}
+  .head b{font-family:var(--narrow);font-size:19px;font-weight:700;letter-spacing:.13em;text-transform:uppercase}
+  .head span{font-family:var(--mono);font-size:10.5px;color:#6b6862}
+  .spread{display:grid;grid-template-columns:1fr 300px;gap:0;padding:26px 44px 0 44px;height:830px}
+  .block{max-width:760px}
+  .block h1{font-family:var(--narrow);font-size:25px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;line-height:1.15;border-bottom:2px solid var(--ink);padding-bottom:10px}
+  .rail{position:relative;border-left:1px solid var(--verm);margin:14px 0 0 300px;padding-left:20px;height:250px}
+  .key{font-family:var(--mono);font-size:11px;color:var(--verm);background:var(--sheet);border:1px solid var(--verm);padding:3px 8px;position:absolute;left:-1px;transform:translateX(-50%)}
+  .cols{columns:2;column-gap:34px;margin-top:14px}
+  .cols p{font-size:13px;line-height:1.62;text-align:justify;margin-bottom:13px;hyphens:auto}
+  .cols p:first-letter{font-family:var(--narrow);font-size:26px;font-weight:700;float:left;line-height:.9;padding:3px 6px 0 0}
+  .cols strong{font-weight:600;border-bottom:1px solid var(--verm)}
+  .margin{border-left:1px solid var(--rule);padding-left:26px;background:linear-gradient(90deg,rgba(255,255,255,.7),rgba(255,255,255,0));height:700px;position:relative}
+  .note{position:absolute;font-family:var(--mono);font-size:10.5px;color:#6b6862;line-height:1.6;border-left:2px solid var(--verm);padding-left:10px}
+  .note b{color:var(--verm);font-weight:500}
+  .cap{font-family:var(--narrow);font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:#8a877f;border-bottom:1px solid var(--rule);padding-bottom:7px;margin-bottom:14px}
+  table{width:100%;border-collapse:collapse;margin-top:6px}
+  th{font-family:var(--narrow);font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:#6b6862;text-align:left;border-bottom:1px solid var(--ink);padding:0 10px 6px 0;font-weight:600}
+  td{padding:9px 10px 9px 0;border-bottom:1px solid var(--rule2);font-family:var(--mono);font-size:11.5px}
+  td.n{text-align:right;font-variant-numeric:tabular-nums}
+  tr.lead td{color:var(--verm)}
+  .sig{border-top:2px solid var(--ink);margin-top:20px;padding-top:12px;display:flex;justify-content:space-between;align-items:flex-end}
+  .sig u{font-family:var(--narrow);font-size:9.5px;letter-spacing:.17em;text-transform:uppercase;color:#6b6862;text-decoration:none}
+  .sig s{font-family:var(--mono);font-size:13px;text-decoration:none;color:var(--verm);display:block;margin-top:4px}
+  .brack{border:1px solid var(--verm);color:var(--verm);font-family:var(--narrow);font-size:9.5px;font-weight:700;letter-spacing:.15em;padding:4px 8px}
+</style>
+</head>
+<body>
+<div class="head"><b>CRISP-DM Operacional</b><span>mercado_vencedor · previsao_dias_atraso · semente 42</span></div>
+<div class="spread">
+  <div class="block">
+    <h1>Pódio Top 3 — Previsão de dias de atraso</h1>
+    <div class="rail">
+      <span class="key" style="top:8px">TORNEIO</span>
+      <span class="key" style="top:118px">ELEIÇÃO</span>
+    </div>
+    <div class="cols">
+      <div>
+        <p><strong>O torneio</strong> correu quatro algoritmos sobre a mesma partição cega de validação. A ordenação do pódio é o estado ao vivo da fase: o líder ocupa a régua cheia, os demais ficam ocos, e a distância entre eles é a margem da competição.</p>
+        <table>
+          <thead><tr><th>Modelo</th><th class="n">R²</th><th class="n">RMSE</th><th class="n">MAE</th></tr></thead>
+          <tbody>
+            <tr class="lead"><td>02_Ridge</td><td class="n">0.0251</td><td class="n">82.7803</td><td class="n">13.8458</td></tr>
+            <tr><td>01_Baseline_Dummy</td><td class="n">-0.0000</td><td class="n">83.8403</td><td class="n">14.7518</td></tr>
+            <tr><td>03_Random_Forest</td><td class="n">-0.0120</td><td class="n">84.3388</td><td class="n">13.6154</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <p><strong>A eleição</strong> é humana e permanece no papel. O analista assina a faixa; a plataforma carimba o canhoto e o torna recuperável. Nada se apaga: uma fase cancelada conserva a linha, o motivo e o registro de execução.</p>
+        <p>A <strong>margem</strong> à direita não é decoração: é o aparato técnico. Diagnóstico de qualidade, avisos de tabela vazia e o log de execução moram ali, fora do corpo do texto, para que a leitura do resultado não seja interrompida.</p>
+        <div class="sig">
+          <div><u>Eleito pelo analista</u><s>02_Ridge</s></div>
+          <div><u>Referência</u><s>J8F2-91C4</s></div>
+          <span class="brack">CONFERIDO</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <aside class="margin">
+    <div class="cap">Aparato · margem anotada</div>
+    <div class="note" style="top:52px"><b>§ 03</b> — leaderboard salvo<br>modelos/mercado_vencedor</div>
+    <div class="note" style="top:168px"><b>aviso</b> — erp_nfedetsubitem.csv<br>0 linhas; receita usa estoque</div>
+    <div class="note" style="top:292px"><b>duração</b> — 41,2 s na fase 04<br>95 amostras de treino</div>
+    <div class="note" style="top:416px"><b>teste retido</b> — 27 amostras<br>R² final -0.0101</div>
+    <div class="note" style="top:548px"><b>contrato</b> — grains: cliente · mês<br>alvo deslocado 1 período</div>
+  </aside>
+</div>
+</body>
+</html>

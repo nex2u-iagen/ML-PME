@@ -1,0 +1,20 @@
+[server]
+# Aumenta o limite de upload para 2GB (padrão é 200MB)
+maxUploadSize = 2048
+
+[runner]
+# Garante que o app não trave com arquivos grandes
+magicEnabled = true
+
+[browser]
+# Endereço para acesso (a porta anunciada no terminal acompanha --server.port;
+# fixar serverPort aqui anunciava 8501 mesmo quando a app subia em 8502).
+serverAddress = "localhost"
+
+[theme]
+# Tema claro para o console operacional
+base = "light"
+primaryColor = "#0E6BA8"
+backgroundColor = "#F5F7F9"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#0B1220"

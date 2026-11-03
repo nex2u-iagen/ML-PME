@@ -1,0 +1,171 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1370 920" font-family="DejaVu Sans, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="seta" markerWidth="9" markerHeight="8" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L8,3 z" fill="#64748b"/>
+    </marker>
+    <marker id="seta_loop" markerWidth="9" markerHeight="8" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L8,3 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <!-- Fundo -->
+  <rect x="0" y="0" width="1370" height="920" fill="#ffffff"/>
+
+  <!-- Cabeçalho -->
+  <text x="685" y="42" font-size="27" font-weight="bold" fill="#0f172a" text-anchor="middle">Ciclo CRISP-DM — Pipeline de 13 etapas</text>
+  <text x="685" y="70" font-size="14" fill="#475569" text-anchor="middle">Da base transacional de PME à API de inferência em produção — 6 fases, 13 etapas executáveis</text>
+
+  <!-- ================= BANDA 1 — FASE 01 · INGESTÃO ================= -->
+  <rect x="0" y="96" width="1370" height="124" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
+  <rect x="0" y="96" width="205" height="124" rx="10" fill="#dbeafe"/>
+  <rect x="195" y="96" width="12" height="124" fill="#dbeafe"/>
+  <text x="102" y="148" font-size="13" font-weight="bold" fill="#2563eb" text-anchor="middle">FASE 01</text>
+  <text x="102" y="170" font-size="13.5" font-weight="bold" fill="#0f172a" text-anchor="middle">INGESTÃO</text>
+
+  <rect x="505" y="118" width="560" height="80" rx="10" fill="#ffffff" stroke="#2563eb" stroke-width="1.6"/>
+  <circle cx="535" cy="158" r="16" fill="#2563eb"/>
+  <text x="535" y="163" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle">1</text>
+  <text x="561" y="152" font-size="15" font-weight="bold" fill="#0f172a">Ingestão</text>
+  <text x="561" y="172" font-size="12.5" fill="#475569">Extração SQL → CSV isolada por PME com validação</text>
+  <text x="561" y="188" font-size="12.5" fill="#475569">das entidades do ERP</text>
+
+  <!-- ================= BANDA 2 — FASE 02 · RAIO-X ================= -->
+  <rect x="0" y="226" width="1370" height="124" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
+  <rect x="0" y="226" width="205" height="124" rx="10" fill="#ccfbf1"/>
+  <rect x="195" y="226" width="12" height="124" fill="#ccfbf1"/>
+  <text x="102" y="278" font-size="13" font-weight="bold" fill="#0d9488" text-anchor="middle">FASE 02</text>
+  <text x="102" y="300" font-size="13.5" font-weight="bold" fill="#0f172a" text-anchor="middle">RAIO-X</text>
+
+  <rect x="505" y="248" width="560" height="80" rx="10" fill="#ffffff" stroke="#0d9488" stroke-width="1.6"/>
+  <circle cx="535" cy="288" r="16" fill="#0d9488"/>
+  <text x="535" y="293" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle">2</text>
+  <text x="561" y="282" font-size="15" font-weight="bold" fill="#0f172a">Raio-X Empresarial 360°</text>
+  <text x="561" y="302" font-size="12.5" fill="#475569">Saúde dos dados + 10 diagnósticos departamentais</text>
+  <text x="561" y="318" font-size="12.5" fill="#475569">e visão agregada de saúde da companhia</text>
+
+  <!-- ================= BANDA 3 — FASE 03 · PREPARAÇÃO ================= -->
+  <rect x="0" y="356" width="1370" height="124" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
+  <rect x="0" y="356" width="205" height="124" rx="10" fill="#fef3c7"/>
+  <rect x="195" y="356" width="12" height="124" fill="#fef3c7"/>
+  <text x="102" y="408" font-size="13" font-weight="bold" fill="#d97706" text-anchor="middle">FASE 03</text>
+  <text x="102" y="430" font-size="13.5" font-weight="bold" fill="#0f172a" text-anchor="middle">PREPARAÇÃO</text>
+
+  <rect x="230" y="378" width="520" height="80" rx="10" fill="#ffffff" stroke="#d97706" stroke-width="1.6"/>
+  <circle cx="260" cy="418" r="16" fill="#d97706"/>
+  <text x="260" y="423" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle">3</text>
+  <text x="286" y="412" font-size="15" font-weight="bold" fill="#0f172a">Data Marts para BI</text>
+  <text x="286" y="432" font-size="12.5" fill="#475569">Tabelas analíticas prontas para painéis</text>
+  <text x="286" y="448" font-size="12.5" fill="#475569">e relatórios gerenciais</text>
+
+  <rect x="820" y="378" width="520" height="80" rx="10" fill="#ffffff" stroke="#d97706" stroke-width="1.6"/>
+  <circle cx="850" cy="418" r="16" fill="#d97706"/>
+  <text x="850" y="423" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle">4</text>
+  <text x="876" y="412" font-size="15" font-weight="bold" fill="#0f172a">ABT + Partições ML</text>
+  <text x="876" y="432" font-size="12.5" fill="#475569">Partição 70/15/15 e pipeline de preparação</text>
+  <text x="876" y="448" font-size="12.5" fill="#475569">de dados versionado</text>
+
+  <line x1="754" y1="418" x2="814" y2="418" stroke="#64748b" stroke-width="1.6" marker-end="url(#seta)"/>
+
+  <!-- ================= BANDA 4 — FASE 04 · MODELAGEM ================= -->
+  <rect x="0" y="486" width="1370" height="124" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
+  <rect x="0" y="486" width="205" height="124" rx="10" fill="#ede9fe"/>
+  <rect x="195" y="486" width="12" height="124" fill="#ede9fe"/>
+  <text x="102" y="538" font-size="13" font-weight="bold" fill="#7c3aed" text-anchor="middle">FASE 04</text>
+  <text x="102" y="560" font-size="13.5" font-weight="bold" fill="#0f172a" text-anchor="middle">MODELAGEM</text>
+
+  <rect x="505" y="508" width="560" height="80" rx="10" fill="#ffffff" stroke="#7c3aed" stroke-width="1.6"/>
+  <circle cx="535" cy="548" r="16" fill="#7c3aed"/>
+  <text x="535" y="553" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle">5</text>
+  <text x="561" y="542" font-size="15" font-weight="bold" fill="#0f172a">Modelagem (Torneio)</text>
+  <text x="561" y="562" font-size="12.5" fill="#475569">Baseline → torneio de modelos → pódio Top 3</text>
+  <text x="561" y="578" font-size="12.5" fill="#475569">e campeão escolhido pela governança</text>
+
+  <!-- ================= BANDA 5 — FASE 05 · AVALIAÇÃO ================= -->
+  <rect x="0" y="616" width="1370" height="124" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
+  <rect x="0" y="616" width="205" height="124" rx="10" fill="#dcfce7"/>
+  <rect x="195" y="616" width="12" height="124" fill="#dcfce7"/>
+  <text x="102" y="668" font-size="13" font-weight="bold" fill="#16a34a" text-anchor="middle">FASE 05</text>
+  <text x="102" y="690" font-size="13.5" font-weight="bold" fill="#0f172a" text-anchor="middle">AVALIAÇÃO</text>
+
+  <rect x="230" y="638" width="250" height="80" rx="10" fill="#ffffff" stroke="#16a34a" stroke-width="1.6"/>
+  <circle cx="260" cy="678" r="16" fill="#16a34a"/>
+  <text x="260" y="683" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle">6</text>
+  <text x="286" y="672" font-size="15" font-weight="bold" fill="#0f172a">Top 3</text>
+  <text x="286" y="692" font-size="11.5" fill="#475569">Matrizes, curvas ROC/PR</text>
+  <text x="286" y="708" font-size="11.5" fill="#475569">e métricas do pódio</text>
+
+  <rect x="516" y="638" width="250" height="80" rx="10" fill="#ffffff" stroke="#16a34a" stroke-width="1.6"/>
+  <circle cx="546" cy="678" r="16" fill="#16a34a"/>
+  <text x="546" y="683" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle">7</text>
+  <text x="572" y="672" font-size="15" font-weight="bold" fill="#0f172a">Custo do Erro</text>
+  <text x="572" y="692" font-size="11.5" fill="#475569">Custo financeiro dos</text>
+  <text x="572" y="708" font-size="11.5" fill="#475569">erros de previsão</text>
+
+  <rect x="802" y="638" width="250" height="80" rx="10" fill="#ffffff" stroke="#16a34a" stroke-width="1.6"/>
+  <circle cx="832" cy="678" r="16" fill="#16a34a"/>
+  <text x="832" y="683" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle">8</text>
+  <text x="858" y="672" font-size="15" font-weight="bold" fill="#0f172a">SHAP (XAI)</text>
+  <text x="858" y="692" font-size="11.5" fill="#475569">Explicabilidade global</text>
+  <text x="858" y="708" font-size="11.5" fill="#475569">e local das predições</text>
+
+  <rect x="1088" y="638" width="250" height="80" rx="10" fill="#ffffff" stroke="#16a34a" stroke-width="1.6"/>
+  <circle cx="1118" cy="678" r="16" fill="#16a34a"/>
+  <text x="1118" y="683" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle">9</text>
+  <text x="1144" y="672" font-size="15" font-weight="bold" fill="#0f172a">Governança</text>
+  <text x="1144" y="692" font-size="11.5" fill="#475569">Deliberação humana e</text>
+  <text x="1144" y="708" font-size="11.5" fill="#475569">dossiê de homologação</text>
+
+  <line x1="484" y1="678" x2="510" y2="678" stroke="#64748b" stroke-width="1.6" marker-end="url(#seta)"/>
+  <line x1="770" y1="678" x2="796" y2="678" stroke="#64748b" stroke-width="1.6" marker-end="url(#seta)"/>
+  <line x1="1056" y1="678" x2="1082" y2="678" stroke="#64748b" stroke-width="1.6" marker-end="url(#seta)"/>
+
+  <!-- ================= BANDA 6 — FASE 06 · IMPLANTAÇÃO ================= -->
+  <rect x="0" y="746" width="1370" height="124" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
+  <rect x="0" y="746" width="205" height="124" rx="10" fill="#ffe4e6"/>
+  <rect x="195" y="746" width="12" height="124" fill="#ffe4e6"/>
+  <text x="102" y="798" font-size="13" font-weight="bold" fill="#e11d48" text-anchor="middle">FASE 06</text>
+  <text x="102" y="820" font-size="13.5" font-weight="bold" fill="#0f172a" text-anchor="middle">IMPLANTAÇÃO</text>
+
+  <rect x="230" y="768" width="250" height="80" rx="10" fill="#ffffff" stroke="#e11d48" stroke-width="1.6"/>
+  <circle cx="260" cy="808" r="16" fill="#e11d48"/>
+  <text x="260" y="813" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle">10</text>
+  <text x="286" y="802" font-size="15" font-weight="bold" fill="#0f172a">Persistência</text>
+  <text x="286" y="822" font-size="11.5" fill="#475569">Artefato do campeão</text>
+  <text x="286" y="838" font-size="11.5" fill="#475569">com manifesto SHA-256</text>
+
+  <rect x="516" y="768" width="250" height="80" rx="10" fill="#ffffff" stroke="#e11d48" stroke-width="1.6"/>
+  <circle cx="546" cy="808" r="16" fill="#e11d48"/>
+  <text x="546" y="813" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle">11</text>
+  <text x="572" y="802" font-size="15" font-weight="bold" fill="#0f172a">Segurança</text>
+  <text x="572" y="822" font-size="11.5" fill="#475569">Bearer JWT e validação</text>
+  <text x="572" y="838" font-size="11.5" fill="#475569">isolada de entrada</text>
+
+  <rect x="802" y="768" width="250" height="80" rx="10" fill="#ffffff" stroke="#e11d48" stroke-width="1.6"/>
+  <circle cx="832" cy="808" r="16" fill="#e11d48"/>
+  <text x="832" y="813" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle">12</text>
+  <text x="858" y="802" font-size="15" font-weight="bold" fill="#0f172a">Contratos</text>
+  <text x="858" y="822" font-size="11.5" fill="#475569">OpenAPI e schemas de</text>
+  <text x="858" y="838" font-size="11.5" fill="#475569">dados versionados</text>
+
+  <rect x="1088" y="768" width="250" height="80" rx="10" fill="#ffffff" stroke="#e11d48" stroke-width="1.6"/>
+  <circle cx="1118" cy="808" r="16" fill="#e11d48"/>
+  <text x="1118" y="813" font-size="14" font-weight="bold" fill="#ffffff" text-anchor="middle">13</text>
+  <text x="1144" y="802" font-size="15" font-weight="bold" fill="#0f172a">Motor de Inferência</text>
+  <text x="1144" y="822" font-size="11.5" fill="#475569">API REST de predição</text>
+  <text x="1144" y="838" font-size="11.5" fill="#475569">em produção para a PME</text>
+
+  <line x1="484" y1="808" x2="510" y2="808" stroke="#64748b" stroke-width="1.6" marker-end="url(#seta)"/>
+  <line x1="770" y1="808" x2="796" y2="808" stroke="#64748b" stroke-width="1.6" marker-end="url(#seta)"/>
+  <line x1="1056" y1="808" x2="1082" y2="808" stroke="#64748b" stroke-width="1.6" marker-end="url(#seta)"/>
+
+  <!-- ================= CONECTORES ENTRE BANDAS ================= -->
+  <line x1="785" y1="198" x2="785" y2="244" stroke="#64748b" stroke-width="1.6" marker-end="url(#seta)"/>
+  <path d="M785 328 V350 H490 V374" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#seta)"/>
+  <path d="M1080 458 V481 H785 V504" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#seta)"/>
+  <path d="M785 588 V611 H355 V634" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#seta)"/>
+  <path d="M1213 718 V741 H355 V764" fill="none" stroke="#64748b" stroke-width="1.6" marker-end="url(#seta)"/>
+
+  <!-- ================= LAÇO DE ITERAÇÃO (CRISP-DM é cíclico) ================= -->
+  <path d="M1338 808 H1356 V158 H1071" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-dasharray="7 5" marker-end="url(#seta_loop)"/>
+  <text x="685" y="902" font-size="13" font-style="italic" fill="#64748b" text-anchor="middle">Iteração — o ciclo CRISP-DM se repete a cada nova pergunta de negócio</text>
+</svg>

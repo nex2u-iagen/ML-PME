@@ -1,331 +1,494 @@
-"""Módulo de Diagnóstico Exploratório do Departamento Comercial (Fase 2.1).
-
-Implementa os indicadores fundamentais de vendas, concentração de receita
-(Curva de Pareto de Clientes), ticket médio por segmento e identificação
-de dependência comercial para Pequenas e Médias Empresas (PMEs).
-"""
-
-# 'import' traz o módulo 'logging' da biblioteca padrão do Python para registro de
-# auditoria e mensagens no console.
+# 'import' é a palavra-chave reservada do Python para importar módulos e bibliotecas.
+# Carrega o módulo 'logging' nativo da biblioteca padrão para registrar eventos
+# técnicos no terminal.
 import logging
 
-# 'from' indica a biblioteca de origem; 'pathlib' lida com caminhos e pastas no sistema
-# operacional de forma orientada a objetos.
-# 'import' traz especificamente a classe 'Path' para representar diretórios e arquivos
-# em Windows, Linux ou Mac.
+# 'from' indica a biblioteca de origem; 'pathlib' manipula diretórios e caminhos de
+# arquivos de forma orientada a objetos.
+# 'import' traz a classe 'Path' para representar diretórios compatíveis com Linux,
+# Windows e macOS.
 from pathlib import Path
 
-# 'from' acessa o módulo 'typing' da biblioteca padrão do Python para suporte a
-# anotações de tipos estáticos (Type Hints).
-# 'import' carrega 'Any' (qualquer tipo permitido) e 'Dict' (estrutura de dados de
-# dicionário com chave e valor).
-from typing import Any
+# 'from' acessa o módulo 'typing' da biblioteca padrão, voltado para anotações de
+# tipagem estática (Type Hints).
+# 'import' traz 'Any' (que aceita qualquer tipo de valor) e 'Dict' (dicionário
+# estruturado de chave e valor).
+from typing import Any, Dict
 
-# 'import' traz o submódulo 'pyplot' da biblioteca externa de gráficos 'matplotlib'.
-# 'as' define o apelido universal 'plt' para encurtar as chamadas de funções gráficas no
+# 'import' traz o submódulo 'pyplot' da biblioteca 'matplotlib', responsável pelo
+# controle de janelas e telas gráficas.
+# 'as' cria o apelido abreviado 'plt' para simplificar as chamadas de funções no
 # código.
 import matplotlib.pyplot as plt
 
-# 'import' traz a biblioteca externa 'pandas', padrão mundial para criação e manipulação
-# de tabelas de dados bidimensionais.
-# 'as' define o apelido oficial 'pd' para economizar digitação na manipulação de
-# DataFrames.
+# 'import' traz a biblioteca externa 'pandas', padrão da indústria para manipulação de
+# tabelas bidimensionais.
+# 'as' define o apelido oficial 'pd'.
 import pandas as pd
 
-# 'import' traz a biblioteca externa 'seaborn', construída sobre o matplotlib para
-# visualizações estatísticas elegantes.
-# 'as' define o apelido clássico 'sns' para estilização visual corporativa.
+# 'import' traz a biblioteca externa 'seaborn', especializada em gráficos estatísticos
+# corporativos elegantes.
+# 'as' define o apelido 'sns'.
 import seaborn as sns
 
-# 'from' navega até o arquivo 'base_departamento.py' localizado no diretório pai de
-# exploração.
-# 'import' traz a classe abstrata 'BaseDepartamento' para herdarmos a infraestrutura
-# pronta do núcleo.
+# 'from' navega até o arquivo 'base_departamento.py' para carregar a classe base
+# abstrata.
+# 'import' traz a classe 'BaseDepartamento' para herdarmos a infraestrutura
+# compartilhada e o adaptador universal.
 from src.etapas.fase_02_exploracao.base_departamento import BaseDepartamento
 
+# Importação do extrator de lançamentos reais de PDV (nome do produto, quantidade e
+# valor), única fonte capaz de quebrar o faturamento por departamento de varejo.
+from src.etapas.fase_02_exploracao.adaptadores.extrator_pdv import (
+    carregar_itens_pdv,
+)
 
-# 'class' é a palavra-chave que declara um novo modelo estrutural orientado a objetos.
-# 'AnalisadorComercial' é o nome da nossa classe em estilo PascalCase (iniciais
-# maiúsculas).
-# '(BaseDepartamento)' entre parênteses estabelece herança: esta classe herda os
-# atributos e ferramentas da classe mãe.
+
+# 'class' declara uma nova classe sob o paradigma de Orientação a Objetos.
+# '(BaseDepartamento)' estabelece herança formal: herda leitor, calculadora,
+# visualizador e a fachada do adaptador.
 class AnalisadorComercial(BaseDepartamento):
-    """Classe responsável pelo diagnóstico de vendas, clientes e produtos do ERP."""
+    """Classe responsável pelo diagnóstico de vendas reais com recorte de 12 meses e
 
-    # 'def' define o método especial construtor '__init__', acionado no momento em que a
-    # classe é instanciada na memória.
-    # 'self' representa a própria instância acessando seus atributos internos.
-    # 'pasta_dados_brutos: Path' é um parâmetro com anotação de tipo que exige o caminho
-    # da pasta de dados CSV.
-    # 'pasta_relatorios: Path' é o caminho onde os relatórios e imagens deste
-    # departamento serão salvos.
-    # '-> None' indica que o método construtor não retorna nenhum dado.
-    def __init__(self, pasta_dados_brutos: Path, pasta_relatorios: Path) -> None:
-        """Inicializa o departamento comercial registrando seu nome canônico.
+    Pareto de Categorias.
+    """
 
-        Args:
-            pasta_dados_brutos (Path): Diretório com as tabelas brutas do ERP.
-            pasta_relatorios (Path): Diretório base de saída dos laudos visuais.
+    # 'def' define o método especial construtor '__init__', acionado no momento da
+    # instanciação da classe.
+    # 'self' referencia a própria instância acessando seus atributos internos.
+    def __init__(
+        self, pasta_dados_brutos: Path, pasta_relatorios: Path
+    ) -> None:
+        """Inicializa o departamento comercial configurando a governança de diretórios
+
+        setoriais.
         """
-        # 'super().__init__' aciona formalmente o construtor da classe base (mãe)
-        # BaseDepartamento.
-        # Passamos os diretórios e registramos o nome canônico 'comercial' para criar a
-        # subpasta de figuras.
+        # 'super().__init__' aciona o construtor da classe base BaseDepartamento.
+        # Passa as pastas e registra 'comercial' como nome canônico para criar o
+        # diretório setorial em relatórios.
         super().__init__(
             pasta_dados_brutos=pasta_dados_brutos,
             pasta_relatorios=pasta_relatorios,
             nome_departamento="comercial",
+            fase_projeto="fase_02",
         )
 
-    # 'def' define o método responsável por carregar e cruzar pedidos com a base
-    # cadastral de clientes.
-    # '-> pd.DataFrame' documenta que o retorno desta função DEVE ser um DataFrame
-    # tabular do pandas.
+    # 'def' define o método responsável por carregar a massa de vendas reais através da
+    # fachada do adaptador.
+    # '-> pd.DataFrame' documenta formalmente que a função devolverá uma matriz tabular
+    # do pandas.
     def carregar_dados_vendas(self) -> pd.DataFrame:
-        """Carrega e cruza as transações de pedidos com a base cadastral de clientes.
+        """Solicita ao Adaptador Universal a tabela canônica com recorte cronológico
 
-        Returns:
-            pd.DataFrame: Tabela unificada com o histórico comercial do ERP.
+        dos últimos 12 meses.
         """
-        # O operador '/' une os caminhos de diretório de forma nativa e segura para
-        # qualquer sistema operacional.
-        # 'caminho_pedidos' armazena o caminho do arquivo de pedidos de venda extraído
-        # na Fase 01.
-        caminho_pedidos = self.pasta_dados_brutos / "erp_pedidos_vendas.csv"
+        # Invoca o método canônico na fachada do adaptador universal, que delega ao
+        # ExtratorVendas.
+        df_vendas = self.adaptador.obter_visao_vendas_comercial()
 
-        # 'caminho_clientes' armazena o caminho do arquivo cadastral de clientes da
-        # empresa.
-        caminho_clientes = self.pasta_dados_brutos / "erp_clientes.csv"
+        # Validação defensiva: se o DataFrame for nulo ou estiver vazio, interrompe o
+        # fluxo com erro explicativo.
+        if df_vendas is None or df_vendas.empty:
+            # Registra no console corporativo o erro de dados ausentes.
+            logging.error(
+                "Comercial — Falha crítica: Nenhum faturamento real foi retornado na"
+                "janela de 12 meses."
+            )
+            # Lança exceção formal impedindo o avanço de cálculos com base vazia.
+            raise ValueError(
+                "Dados comerciais reais não encontrados na janela de análise sob"
+                "perícia."
+            )
 
-        # 'self.leitor' é a ferramenta herdada da classe base; 'carregar_tabela' lê o
-        # arquivo CSV e devolve um DataFrame.
-        # 'df_pedidos' recebe a matriz de pedidos em memória RAM.
-        df_pedidos = self.leitor.carregar_tabela(caminho_pedidos)
-
-        # 'df_clientes' recebe a matriz cadastral de clientes em memória RAM.
-        df_clientes = self.leitor.carregar_tabela(caminho_clientes)
-
-        # 'pd.to_datetime' converte a coluna de texto 'data_pedido' em formato oficial
-        # de data e hora do pandas.
-        # Isso viabiliza ordenações cronológicas e extrações de ano, mês e dia da
-        # semana.
-        df_pedidos["data_pedido"] = pd.to_datetime(df_pedidos["data_pedido"])
-
-        # 'pd.merge' realiza a junção relacional (o equivalente ao comando INNER JOIN do
-        # SQL) entre as duas tabelas.
-        # 'on="id_cliente"' especifica que a chave de ligação de dados é o identificador
-        # único do cliente.
-        # 'how="inner"' garante que apenas pedidos associados a clientes devidamente
-        # cadastrados permaneçam na tabela.
-        df_comercial = pd.merge(df_pedidos, df_clientes, on="id_cliente", how="inner")
-
-        # 'logging.info' emite uma mensagem formatada no terminal registrando o sucesso
-        # da integração.
-        # 'len(df_comercial)' calcula a contagem total inteira de linhas resultantes da
-        # junção.
+        # Emite log confirmando a volumetria exata de transações incorporadas na janela
+        # móvel de 12 meses.
         logging.info(
-            "Comercial — Base consolidada com %d transações mapeadas.",
-            len(df_comercial),
+            "Comercial — Base canônica carregada com %d transações na janela de 12"
+            "meses.",
+            len(df_vendas),
         )
 
-        # 'return' devolve a tabela unificada pronta para a extração dos indicadores de
-        # vendas.
-        return df_comercial
+        # Devolve a matriz tabular canônica pronta para a geração dos indicadores e
+        # gráficos.
+        return df_vendas
 
-    # 'def' define o método responsável por calcular o Ticket Médio (valor médio por
-    # pedido) em cada segmento.
-    # 'dados: pd.DataFrame' recebe a tabela comercial que acabou de ser consolidada pelo
-    # método anterior.
-    # '-> Dict[str, float]' indica que o retorno é um dicionário onde a chave é o nome
-    # do segmento e o valor é o valor monetário.
-    def calcular_ticket_medio_segmento(self, dados: pd.DataFrame) -> dict[str, float]:
-        """Calcula o valor médio desembolsado por pedido em cada segmento da carteira.
+    # 'def' define o método especialista em desenhar a evolução cronológica do
+    # faturamento mês a mês.
+    def gerar_grafico_evolucao_12_meses(self, dados: pd.DataFrame) -> Path:
+        """Renderiza a série temporal de faturamento mês a mês ao longo dos últimos 12
 
-        Args:
-            dados (pd.DataFrame): Tabela comercial consolidada com pedidos e segmentos.
-
-        Returns:
-            Dict[str, float]: Dicionário com os segmentos e seus respectivos tickets
-            médios em reais.
+        meses de operação.
         """
-        # '.groupby("segmento")' agrupa as linhas da tabela pelo nicho de atuação do
-        # cliente (ex.: Varejo, Saúde).
-        # '["valor_total"]' seleciona a coluna numérica de faturamento da transação para
-        # o cálculo.
-        # '.mean()' calcula a Média Aritmética somando os valores e dividindo pelo total
-        # de pedidos do grupo.
-        # '.round(2)' arredonda o resultado decimal para duas casas após a vírgula
-        # (formato monetário em R$).
-        # '.to_dict()' converte o resultado do pandas em um dicionário nativo do Python
-        # (chave: valor).
-        ticket_medio = (
-            dados.groupby("segmento")["valor_total"].mean().round(2).to_dict()
+        # Agrupa as transações pelo atributo temporal 'ano_mes' e calcula o somatório do
+        # faturamento bruto.
+        # '.reset_index()' converte a série agrupada de volta em um DataFrame tabular
+        # comum.
+        vendas_mensais = (
+            dados.groupby("ano_mes")["valor_total"].sum().reset_index()
         )
 
-        # 'for' cria um laço de repetição percorrendo cada item do dicionário gerado.
-        # '.items()' devolve simultaneamente a chave ('segmento') e o valor numérico
-        # ('valor').
-        for segmento, valor in ticket_medio.items():
-            # 'logging.info' imprime no console o ticket médio calculado para cada um
-            # dos segmentos.
-            logging.info("Comercial — Ticket Médio ['%s']: R$ %.2f", segmento, valor)
-
-        # 'return' entrega o dicionário com os tickets médios calculados para compor o
-        # laudo final.
-        return ticket_medio
-
-    # 'def' define o método especialista em gerar a Curva de Pareto de Clientes (Regra
-    # 80/20).
-    # 'caminho_figura' será devolvido como um objeto Path indicando o endereço exato do
-    # arquivo PNG gerado.
-    def gerar_grafico_pareto_clientes(self, dados: pd.DataFrame) -> Path:
-        """Renderiza o gráfico de Pareto demonstrando a concentração de receita nos
-        clientes.
-
-        Args:
-            dados (pd.DataFrame): Tabela comercial consolidada.
-
-        Returns:
-            Path: Caminho físico da imagem exportada no disco em alta resolução (300
-            DPI).
-        """
-        # Agrupa pelo nome fantasia do cliente e soma a coluna 'valor_total' para saber
-        # o gasto total de cada um.
-        # '.reset_index()' converte o resultado agrupado de volta em um DataFrame com
-        # colunas comuns.
-        vendas_cliente = (
-            dados.groupby("nome_fantasia")["valor_total"].sum().reset_index()
+        # '.sort_values(by="ano_mes", ascending=True)' garante a ordenação cronológica
+        # crescente no eixo horizontal.
+        vendas_mensais = vendas_mensais.sort_values(
+            by="ano_mes", ascending=True
         )
 
-        # '.sort_values()' ordena as linhas de forma decrescente pelo faturamento total
-        # (do maior cliente para o menor).
-        # 'ascending=False' garante que os maiores clientes fiquem posicionados no topo
-        # da lista.
-        vendas_cliente = vendas_cliente.sort_values(by="valor_total", ascending=False)
+        # Constrói o caminho completo da imagem PNG dentro da subpasta setorial
+        # 'relatorios/<banco>/fase_02/comercial/'.
+        caminho_figura = (
+            self.pasta_saida / "evolucao_faturamento_ultimos_12_meses.png"
+        )
 
-        # 'self.pasta_saida' é o caminho da pasta de figuras do departamento comercial,
-        # herdada da classe base.
-        # O operador '/' define o nome final do arquivo de imagem que será gravado no
-        # disco rígido.
-        caminho_figura = self.pasta_saida / "pareto_faturamento_clientes.png"
-
-        # 'plt.subplots()' inicializa uma tela de desenho gráfica; 'figsize=(10, 5)'
-        # define 10 polegadas de largura por 5 de altura.
-        # 'figura' representa a tela inteira; 'eixo' representa a área interna onde o
-        # gráfico de barras será desenhado.
+        # 'plt.subplots(figsize=(10, 5))' inicializa a tela de desenho com proporção 10
+        # por 5 polegadas.
         figura, eixo = plt.subplots(figsize=(10, 5))
 
-        # 'sns.barplot' renderiza o gráfico de barras verticais utilizando a biblioteca
+        # 'sns.barplot(...)' delega a renderização gráfica de barras verticais ao
         # Seaborn.
-        # 'data=vendas_cliente' informa a tabela de dados que alimenta as barras.
-        # 'x="nome_fantasia"' posiciona os nomes dos clientes no eixo horizontal X.
-        # 'y="valor_total"' projeta a altura das barras correspondente ao faturamento no
-        # eixo vertical Y.
-        # 'color="#1f77b4"' aplica a tonalidade azul clássica industrial de alta
-        # legibilidade corporativa.
-        # 'ax=eixo' manda o Seaborn desenhar dentro da moldura que configuramos no
-        # matplotlib.
+        # - 'hue="ano_mes"' e 'legend=False': atende ao padrão do Seaborn v0.14+
+        # eliminando avisos futuros.
+        # - 'palette="Blues_r"': aplica gradiente azul corporativo com contraste
+        # elegante para séries temporais.
         sns.barplot(
-            data=vendas_cliente,
-            x="nome_fantasia",
+            data=vendas_mensais,
+            x="ano_mes",
             y="valor_total",
-            color="#1f77b4",
+            hue="ano_mes",
+            palette="Blues_r",
+            legend=False,
             ax=eixo,
         )
 
-        # 'eixo.set_title' define o texto do título no topo da imagem com fonte tamanho
-        # 13 e espaçamento de 12 pontos.
+        # Configura o título principal no topo da imagem com tamanho 13 e padding de 12
+        # pontos.
         eixo.set_title(
-            "Concentração de Receita por Cliente (Análise de Pareto 80/20)",
+            "Evolução Mensal do Faturamento Real (Recorte Últimos 12 Meses)",
             fontsize=13,
             pad=12,
         )
 
-        # 'eixo.set_xlabel' escreve o rótulo descritivo no eixo horizontal X.
-        eixo.set_xlabel("Cliente (Nome Fantasia)", fontsize=10)
+        # Configura as legendas dos eixos horizontal e vertical em português.
+        eixo.set_xlabel("Ano-Mês de Competência", fontsize=10)
+        eixo.set_ylabel("Faturamento Total Faturado (R$)", fontsize=10)
 
-        # 'eixo.set_ylabel' escreve o rótulo financeiro no eixo vertical Y.
-        eixo.set_ylabel("Faturamento Total (R$)", fontsize=10)
-
-        # 'plt.xticks(rotation=45, ha="right")' rotaciona os nomes dos clientes em 45
-        # graus e alinha à direita.
-        # Isso impede que os nomes dos clientes fiquem encavalados ou ilegíveis no
-        # rodapé do gráfico.
+        # 'plt.xticks(rotation=45, ha="right")' inclina os rótulos de data em 45 graus
+        # para garantir legibilidade.
         plt.xticks(rotation=45, ha="right")
 
-        # 'plt.tight_layout()' faz o ajuste dinâmico automático de margens para não
-        # cortar nenhum texto da imagem.
+        # Ajusta automaticamente as margens dinâmicas do Matplotlib para não cortar
+        # rótulos de texto.
         plt.tight_layout()
 
-        # 'figura.savefig' salva a imagem fisicamente no disco no formato PNG.
-        # 'dpi=300' (Dots Per Inch / Pontos por Polegada) garante resolução industrial
-        # nítida para impressão e telas 4K.
+        # Grava a figura física no disco rígido em alta resolução industrial (300 DPI).
         figura.savefig(caminho_figura, dpi=300)
 
-        # 'plt.close(figura)' destrói o objeto gráfico da memória RAM do computador
-        # imediatamente após a gravação.
-        # Essa instrução é vital para evitar vazamentos de memória (Memory Leak) em
-        # pipelines de dados contínuos.
+        # Destrói o objeto da tela na memória RAM para prevenir vazamentos de memória
+        # (Memory Leak).
         plt.close(figura)
 
-        # 'logging.info' confirma no terminal que o gráfico foi renderizado e persistido
-        # com sucesso.
+        # Registra no log de auditoria a persistência bem-sucedida do gráfico temporal.
         logging.info(
-            "Comercial — Gráfico de Pareto exportado para: %s", caminho_figura.name
+            "Comercial — Gráfico temporal de 12 meses salvo em: %s",
+            caminho_figura.name,
         )
 
-        # 'return' devolve o caminho físico do arquivo salvo para fins de
-        # rastreabilidade e governança.
+        # Devolve o caminho do arquivo PNG gerado.
+        return caminho_figura
+
+    # 'def' define o método responsável por carregar os lançamentos reais de PDV,
+    # que trazem o nome do produto por item vendido.
+    def carregar_itens_pdv(self) -> pd.DataFrame:
+        """Recupera os itens reais lançados no caixa (produto, quantidade, valor).
+
+        Returns:
+            pd.DataFrame: Tabela de itens do PDV com a coluna 'departamento'
+            classificada. Retorna tabela vazia quando o dataset não possui log de
+            auditoria — o chamador decide o plano B.
+        """
+        # Delega a extração ao extrator especialista apontando para a pasta bruta do
+        # dataset ativo (o adaptador já resolveu o diretório correto).
+        df_itens = carregar_itens_pdv(self.adaptador.pasta_erp)
+
+        # Confirma no log a volumetria efetivamente disponível para o Pareto.
+        if df_itens.empty:
+            logging.warning(
+                "Comercial — Sem lançamentos de PDV disponíveis; o Pareto por "
+                "departamento usará o plano de categorias canônico."
+            )
+        else:
+            logging.info(
+                "Comercial — %d itens reais de PDV carregados para o Pareto por "
+                "departamento.",
+                len(df_itens),
+            )
+
+        return df_itens
+
+    # 'def' define o método especialista em desenhar a Curva de Pareto por Categorias
+    # de Varejo.
+    def gerar_grafico_pareto_categorias(self, dados: pd.DataFrame) -> Path:
+        """Renderiza a Curva de Pareto por Departamento/Categoria de Varejo (Açougue,
+
+        Hortifrúti, etc.).
+        """
+        # Agrupa o faturamento pela categoria real de produto e calcula o montante
+        # acumulado de vendas.
+        vendas_categoria = (
+            dados.groupby("categoria_departamento")["valor_total"]
+            .sum()
+            .reset_index()
+        )
+
+        # '.sort_values(by="valor_total", ascending=False)' ordena as categorias da
+        # mais faturada para a menor.
+        vendas_categoria = vendas_categoria.sort_values(
+            by="valor_total", ascending=False
+        )
+
+        # Constrói o caminho completo da imagem dentro da subpasta setorial de relatórios
+        # do cliente.
+        caminho_figura = self.pasta_saida / "pareto_faturamento_categorias.png"
+
+        # Inicializa a moldura gráfica com 10 polegadas de largura por 5 de altura.
+        figura, eixo = plt.subplots(figsize=(10, 5))
+
+        # 'sns.barplot(...)' renderiza o gráfico de barras verticais coloridas por
+        # categoria de varejo.
+        # - 'palette="mako"': aplica paleta contrastante e visualmente moderna para
+        # agrupamentos categóricos.
+        sns.barplot(
+            data=vendas_categoria,
+            x="categoria_departamento",
+            y="valor_total",
+            hue="categoria_departamento",
+            palette="mako",
+            legend=False,
+            ax=eixo,
+        )
+
+        # Define o título principal da visualização no topo da tela gráfica.
+        eixo.set_title(
+            "Concentração de Receita por Categoria de Varejo (Pareto Real)",
+            fontsize=13,
+            pad=12,
+        )
+
+        # Define os rótulos conceituais dos eixos horizontal e vertical em português.
+        eixo.set_xlabel("Departamento / Categoria de Produto", fontsize=10)
+        eixo.set_ylabel("Faturamento Total Acumulado (R$)", fontsize=10)
+
+        # 'plt.xticks(rotation=30, ha="right")' inclina os nomes dos departamentos em 30
+        # graus para evitar cortes.
+        plt.xticks(rotation=30, ha="right")
+
+        # Ajusta dinamicamente as margens do gráfico no Matplotlib.
+        plt.tight_layout()
+
+        # Salva o arquivo de imagem no disco com resolução de 300 DPI.
+        figura.savefig(caminho_figura, dpi=300)
+
+        # Fecha o objeto da figura no Matplotlib para desalocar imediatamente a memória
+        # RAM.
+        plt.close(figura)
+
+        # Confirma a gravação do gráfico de Pareto no log de auditoria.
+        logging.info(
+            "Comercial — Gráfico de Pareto de Categorias salvo em: %s",
+            caminho_figura.name,
+        )
+
+        # Devolve o caminho físico da figura gravada.
+        return caminho_figura
+
+    # 'def' define o método especialista em desenhar o Pareto por DEPARTAMENTO de
+    # varejo a partir dos lançamentos reais do PDV.
+    def gerar_grafico_pareto_departamentos(self, itens: pd.DataFrame) -> Path:
+        """Renderiza a Curva de Pareto da receita quebrada por departamento de varejo.
+
+        Ao contrário do plano de categorias canônico (que depende de uma coluna de
+        departamento inexistente na visão de notas), esta visão usa o produto real
+        lançado no caixa, classificado lexicalmente em departamentos (Padaria,
+        Hortifrúti, Açougue, Bebidas etc.).
+
+        Args:
+            itens (pd.DataFrame): Itens reais do PDV com 'departamento' e 'valor'.
+
+        Returns:
+            Path: Caminho do PNG 300 DPI gravado na pasta do departamento.
+        """
+        # Agrupa a receita do período por departamento e ordena do maior para o menor.
+        receita_departamento = (
+            itens.groupby("departamento")["valor"]
+            .sum()
+            .sort_values(ascending=False)
+        )
+
+        # Calcula a participação acumulada (curva de Pareto) em percentual.
+        total_periodo = float(receita_departamento.sum())
+        participacao_acumulada = (
+            receita_departamento.cumsum() / total_periodo * 100 if total_periodo > 0
+            else receita_departamento * 0
+        )
+
+        # Converte a série em DataFrame tabular para alimentar o gráfico.
+        df_pareto = receita_departamento.rename("valor").reset_index()
+        df_pareto["acumulado"] = participacao_acumulada.values
+
+        # Constrói o caminho da figura dentro da subpasta 'comercial/'.
+        caminho_figura = self.pasta_saida / "pareto_faturamento_por_departamento.png"
+
+        # Moldura gráfica de 10 por 6 polegadas (maior altura para nomes longos).
+        figura, eixo = plt.subplots(figsize=(10, 6))
+
+        # Posições inteiras no eixo Y: o item 0 (maior faturamento) fica no TOPO,
+        # garantindo a ordem clássica do Pareto de cima para baixo.
+        posicoes = list(range(len(df_pareto)))
+
+        # Paleta sequencial equivalente à 'mako' do Seaborn (sem dependência de
+        # tipagem categórica, o que evita inversão silenciosa de ordem).
+        paleta = sns.color_palette("mako", n_colors=len(df_pareto))
+
+        # Barras horizontais: nomes extensos ('Frios e Laticínios') ficam legíveis.
+        eixo.barh(
+            posicoes,
+            df_pareto["valor"],
+            color=paleta,
+        )
+
+        # Eixo Y com os nomes reais dos departamentos e ordem decrescente no topo.
+        eixo.set_yticks(posicoes)
+        eixo.set_yticklabels(df_pareto["departamento"])
+        eixo.set_ylim(len(df_pareto) - 0.4, -0.4)
+
+        # Folga à direita para que o rótulo monetário do maior barra não seja cortado.
+        eixo.set_xlim(0, float(df_pareto["valor"].max()) * 1.22)
+
+        # Rótulo monetário ao final de cada barra para leitura direta do valor.
+        for posicao, valor in enumerate(df_pareto["valor"]):
+            eixo.text(
+                valor,
+                posicao,
+                f"  R$ {valor:,.0f}".replace(",", "."),
+                ha="left",
+                va="center",
+                fontsize=9,
+            )
+
+        # Eixo superior: linha da participação acumulada (a "curva" do Pareto).
+        # 'twiny()' compartilha o eixo Y (posições) e cria um X secundário no topo.
+        eixo_acumulado = eixo.twiny()
+        eixo_acumulado.plot(
+            df_pareto["acumulado"],
+            posicoes,
+            color="#d62728",
+            marker="o",
+            linewidth=2,
+            label="% acumulado",
+        )
+
+        # Referência clássica dos 80% de concentração da Curva de Pareto.
+        eixo_acumulado.axvline(
+            80, color="#d62728", linestyle="--", linewidth=1, label="Linha 80%"
+        )
+        eixo_acumulado.set_xlabel("% da Receita Acumulada", fontsize=10)
+        eixo_acumulado.set_xlim(0, 105)
+
+        # Legenda combinada deslocada para a área livre central-inferior (à
+        # direita das barras pequenas, que permanecem visíveis).
+        eixo_acumulado.legend(
+            loc="lower left", bbox_to_anchor=(0.30, 0.0), fontsize=8
+        )
+
+        # Títulos e rótulos executivos em português.
+        eixo.set_title(
+            "Concentração de Receita por Departamento de Varejo (Pareto Real — PDV)",
+            fontsize=13,
+            pad=34,
+        )
+        eixo.set_xlabel("Faturamento no Período (R$)", fontsize=10)
+        eixo.set_ylabel("Departamento de Varejo", fontsize=10)
+
+        # Ajusta as margens dinamicamente e grava em alta resolução industrial.
+        plt.tight_layout()
+        figura.savefig(caminho_figura, dpi=300)
+
+        # Destrói a figura para liberar a memória RAM do servidor.
+        plt.close(figura)
+
+        # Confirma a gravação no log de auditoria.
+        logging.info(
+            "Comercial — Pareto por departamento salvo em: %s (%d departamentos).",
+            caminho_figura.name,
+            len(df_pareto),
+        )
+
         return caminho_figura
 
     # 'def' implementa a assinatura obrigatória herdada da classe base abstrata
     # 'BaseDepartamento'.
-    # Este método orquestra a execução de todos os KPIs do departamento comercial em
-    # sequência lógica.
-    def executar_diagnostico_completo(self) -> dict[str, Any]:
-        """Coordena o cálculo de todos os KPIs comerciais e a geração de figuras
-        analíticas.
+    def executar_diagnostico_completo(self) -> Dict[str, Any]:
+        """Coordena o cálculo das métricas de 12 meses e exporta os gráficos temporal e
 
-        Returns:
-            Dict[str, Any]: Laudo comercial consolidado com faturamento e tickets
-            médios.
+        de Pareto.
         """
-        # Emite log marcando o início da perícia comercial da Fase 2.1.
-        logging.info("=== INICIANDO PERÍCIA DO DEPARTAMENTO COMERCIAL (FASE 2.1) ===")
+        # Emite log formal registrando o início da perícia comercial da Fase 2.1.
+        logging.info(
+            "=== INICIANDO PERÍCIA DO DEPARTAMENTO COMERCIAL (FASE 2.1) ==="
+        )
 
-        # Invoca o método interno que carrega e funde pedidos e clientes na memória RAM
-        # uma única vez.
+        # 1. Carrega os dados reais de vendas com o recorte móvel de 12 meses via
+        # Adaptador Universal.
         df_vendas = self.carregar_dados_vendas()
 
-        # Dispara o método especialista que calcula o Ticket Médio por segmento de
-        # atuação.
-        ticket_segmentos = self.calcular_ticket_medio_segmento(df_vendas)
+        # 2. Executa a camada gráfica renderizando a evolução temporal de faturamento
+        # mês a mês.
+        caminho_grafico_12m = self.gerar_grafico_evolucao_12_meses(df_vendas)
 
-        # Dispara o método especialista que desenha e salva o gráfico de Pareto no
-        # disco.
-        caminho_grafico = self.gerar_grafico_pareto_clientes(df_vendas)
+        # 3. Executa a camada gráfica do Pareto: prefere a quebra REAL por
+        # departamento de varejo (lançamentos do PDV com nome de produto); quando o
+        # dataset não possui log de PDV, cai para o plano de categorias canônico.
+        itens_pdv = self.carregar_itens_pdv()
+        pareto_por_departamento = not itens_pdv.empty
 
-        # 'float(df_vendas["valor_total"].sum())' calcula o somatório total bruto
-        # vendido pela companhia.
-        # 'round(..., 2)' arredonda o faturamento total em centavos.
-        faturamento_total_bruto = round(float(df_vendas["valor_total"].sum()), 2)
+        if pareto_por_departamento:
+            caminho_grafico_pareto = self.gerar_grafico_pareto_departamentos(itens_pdv)
+        else:
+            caminho_grafico_pareto = self.gerar_grafico_pareto_categorias(df_vendas)
 
-        # 'int(len(df_vendas))' calcula a contagem total inteira de transações
-        # registradas no sistema.
+        # Calcula o faturamento total acumulado no período de 12 meses.
+        faturamento_total_bruto = round(
+            float(df_vendas["valor_total"].sum()), 2
+        )
+
+        # Conta a quantidade total de cupons e notas fiscais emitidas na janela móvel.
         total_pedidos_contados = int(len(df_vendas))
 
-        # 'laudo_comercial' é um dicionário estruturado criado para reunir todos os
-        # achados do departamento.
+        # Estrutura o laudo comercial consolidado para integração no prontuário 360
+        # Graus da empresa.
         laudo_comercial = {
-            "faturamento_bruto_total": faturamento_total_bruto,
-            "total_pedidos_faturados": total_pedidos_contados,
-            "ticket_medio_por_segmento": ticket_segmentos,
-            "grafico_pareto_clientes": str(caminho_grafico),
+            "faturamento_bruto_12_meses": faturamento_total_bruto,
+            "total_pedidos_faturados_12m": total_pedidos_contados,
+            "grafico_evolucao_12_meses": str(caminho_grafico_12m),
+            "grafico_pareto_categorias": str(caminho_grafico_pareto),
         }
 
-        # Emite log registrando o encerramento bem-sucedido do departamento comercial.
+        # Enriquece o laudo com a visão departamental real quando ela existir.
+        if pareto_por_departamento:
+            receita_departamento = (
+                itens_pdv.groupby("departamento")["valor"].sum().sort_values(ascending=False)
+            )
+            laudo_comercial["grafico_pareto_departamentos"] = str(caminho_grafico_pareto)
+            laudo_comercial["departamentos_identificados"] = int(receita_departamento.size)
+            laudo_comercial["faturamento_pdv_periodo_reais"] = round(
+                float(receita_departamento.sum()), 2
+            )
+            laudo_comercial["periodo_analise_pdv"] = (
+                f"{itens_pdv['data'].min():%Y-%m-%d} a {itens_pdv['data'].max():%Y-%m-%d}"
+            )
+            laudo_comercial["departamento_lider"] = str(receita_departamento.index[0])
+
+        # Emite log confirmando a conclusão bem-sucedida do setor comercial.
         logging.info("=== DEPARTAMENTO COMERCIAL CONCLUÍDO COM SUCESSO ===")
 
-        # 'return' entrega o dicionário com os indicadores para o orquestrador geral do
-        # projeto.
+        # Devolve o laudo executivo comercial estruturado.
         return laudo_comercial

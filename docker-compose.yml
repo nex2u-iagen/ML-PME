@@ -13,9 +13,8 @@ services:
     # Política de reinicialização automática em caso de oscilações
     restart: unless-stopped
     # Variáveis de ambiente injetadas no contêiner
-    environment:
-      - PYTHONUNBUFFERED=1
-      - CHAVE_MESTRE_SUPER_SECRETA_PRODUCAO=CHAVE_MESTRE_SUPER_SECRETA_PRODUCAO_MINIMO_32_BYTES_2026
+    env_file:
+      - .env
     # Sonda de prontidão interna (Healthcheck) que audita a saúde do microserviço a cada 30 segundos
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/saude/prontidao')\""]
@@ -23,3 +22,19 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  # Frontend Streamlit - interface operacional CRISP-DM
+  streamlit-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["streamlit", "run", "app_streamlit.py", "--server.headless", "true", "--server.port", "8501", "--server.baseUrlPath", "/streamlit"]
+    ports:
+      - "8501:8501"
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - API_URL=http://api-predicao-risco:8000
+    depends_on:
+      - api-predicao-risco

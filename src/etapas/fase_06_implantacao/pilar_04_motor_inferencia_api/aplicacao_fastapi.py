@@ -1,280 +1,145 @@
-"""Aplicação Web de Produção do Microserviço REST de Inferência Clínica (Pilar 4 - Fase
-6).
+"""Aplicação Web de Produção do Microsserviço REST de Inferência Financeira (Pilar 4 - Fase 6).
 
-Responsabilidade Única: Expor os pontos de terminação (endpoints) HTTP com documentação
-interativa Swagger OpenAPI, gerir o ciclo de vida da aplicação através de contexto
-assíncrono
-(Lifespan), redirecionar acessos da raiz para a documentação técnica, autenticar
-requisições
-via credencial Bearer Token e entregar a resposta preditiva em frações de
-milissegundo[cite: 10, 13].
+Responsabilidade Única: Expor endpoints HTTP com documentação interativa Swagger OpenAPI 3.1,
+gerir o ciclo de vida da aplicação (Lifespan), autenticar requisições via Bearer Token JWT
+e entregar predições de risco de crédito com validação Pydantic em frações de milissegundo[cite: 10].
+
+Além do microsserviço de inferência, a aplicação expõe a **camada de serviço da
+plataforma agnóstica (G6)**: catálogo de datasets, upload de arquivos, vínculo de
+problemas de negócio, execução assíncrona de fases, consulta de jobs, pódio Top 3
+e registro da escolha humana do campeão.
 """
 
-# 'from contextlib' acede ao módulo da biblioteca padrão para manipulação de
-# gerenciadores de contexto.
-# 'asynccontextmanager' é o decorador oficial que permite criar funções de ciclo de vida
-# assíncronas (Lifespan).
-# Este padrão substitui os eventos legados '@app.on_event("startup")' e
-# '@app.on_event("shutdown")'.
+# 'from contextlib' provê suporte ao gerenciador de ciclo de vida assíncrono (Lifespan)[cite: 10].
 from contextlib import asynccontextmanager
 
-# 'from pathlib' acede à biblioteca padrão de manipulação de sistemas de ficheiros
-# orientada a objetos.
-# 'Path' é a classe que representa caminhos de ficheiros e pastas de forma agnóstica ao
-# sistema operativo (Linux/Windows)[cite: 5].
+# 'import os' acessa as variáveis de ambiente do servidor (segredos e credenciais).
+import os
+
+# 'from pathlib' manipula caminhos orientados a objetos de forma agnóstica ao sistema operacional[cite: 10].
 from pathlib import Path
 
-# 'from typing' acede ao sistema de anotação de tipos estáticos do Python[cite: 4].
-# 'Any' declara que o tipo da variável pode assumir qualquer natureza estrutural[cite:
-# 4].
-# 'Dict' documenta formalmente estruturas do tipo chave-valor (dicionários
-# associativos)[cite: 5].
-from typing import Any
+# 'from typing' provê suporte a tipagem estática[cite: 10].
+from typing import Any, Optional
 
-# 'from fastapi' carrega os componentes estruturais do ecossistema web assíncrono de
-# alto desempenho[cite: 5].
-# 'Depends' ativa o motor de injeção de dependências do FastAPI para validar requisitos
-# antes da rota principal.
-# 'FastAPI' é a classe central que instancia a aplicação web, coordena roteadores e
-# compila o OpenAPI.
-# 'HTTPException' é a classe de exceção controlada usada para devolver respostas de erro
-# padronizadas do protocolo HTTP.
-# 'status' é o catálogo de constantes numéricas oficiais do protocolo HTTP (ex:
-# HTTP_401_UNAUTHORIZED, HTTP_503).
-from fastapi import Depends, FastAPI, HTTPException, status
+# 'from pydantic' traz o motor de validação com tipagem forte dos contratos da API.
+from pydantic import BaseModel, Field
 
-# 'from fastapi.responses' acede aos tipos de resposta HTTP nativos do framework.
-# 'RedirectResponse' permite enviar uma resposta de redirecionamento de URL (HTTP 307)
-# para o navegador web.
+# 'from fastapi' carrega os componentes web assíncronos de alto desempenho[cite: 10].
+# from fastapi carrega os componentes web assíncronos de alto desempenho[cite: 10].
+from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, status
 from fastapi.responses import RedirectResponse
 
-# 'from pydantic' carrega a classe base de validação e modelagem de dados da biblioteca
-# Pydantic V2.
-# 'BaseModel' é herdada para criar contratos de dados auditáveis e auto-validados para
-# cargas úteis JSON.
-from pydantic import BaseModel
+# Importa a camada de serviço da plataforma agnóstica (G6) e o gerenciador de jobs.
+from src.nucleo.orquestracao.servico_plataforma import ServicoPlataforma
 
-# Importa o gestor de criptografia e emissão de tokens JWT do Pilar 2 de segurança.
-from src.etapas.fase_06_implantacao.pilar_02_seguranca_autenticacao.gerenciador_token_jwt import (  # noqa: E501
+# Importação dos módulos especialistas dos Pilares 1, 2, 3 e 4 da Fase 6[cite: 10]:
+from src.etapas.fase_06_implantacao.pilar_02_seguranca_autenticacao.gerenciador_token_jwt import (
     GerenciadorTokenJWT,
 )
-
-# Importa o interceptor HTTPBearer homologado no Pilar 2 para barramento de requisições
-# sem crachá digital.
-from src.etapas.fase_06_implantacao.pilar_02_seguranca_autenticacao.guardiao_autorizacao import (  # noqa: E501
+from src.etapas.fase_06_implantacao.pilar_02_seguranca_autenticacao.guardiao_autorizacao import (
     verificar_autorizacao_portador,
 )
-
-# Importa o contrato formal de dados com as 10 variáveis preditoras clínicas homologadas
-# no Pilar 3.
-from src.etapas.fase_06_implantacao.pilar_03_contratos_dados.esquema_entrada_paciente import (  # noqa: E501
-    EsquemaEntradaPaciente,
+from src.etapas.fase_06_implantacao.pilar_03_contratos_dados.esquema_entrada_cliente import (
+    EsquemaEntradaCliente,
 )
-
-# Importa o contrato oficial de saída da predição com os campos de decisão e latência do
-# Pilar 3.
-from src.etapas.fase_06_implantacao.pilar_03_contratos_dados.esquema_resposta_predicao import (  # noqa: E501
+from src.etapas.fase_06_implantacao.pilar_03_contratos_dados.esquema_resposta_predicao import (
     EsquemaRespostaPredicao,
 )
-
-# Importa o gestor de persistência em memória RAM Singleton do próprio Pilar 4.
-from src.etapas.fase_06_implantacao.pilar_04_motor_inferencia_api.carregador_modelo_singleton import (  # noqa: E501
+from src.etapas.fase_06_implantacao.pilar_04_motor_inferencia_api.carregador_modelo_singleton import (
     CarregadorModeloSingleton,
 )
-
-# Importa o motor de cálculo matricial vetorizado em padrão C-contíguo do Pilar 4[cite:
-# 5].
-from src.etapas.fase_06_implantacao.pilar_04_motor_inferencia_api.motor_predicao_vetorizado import (  # noqa: E501
+from src.etapas.fase_06_implantacao.pilar_04_motor_inferencia_api.motor_predicao_vetorizado import (
     MotorPredicaoVetorizado,
 )
 
 # --------------------------------------------------------------------------------------
-# RESOLUÇÃO ANCORADA DA RAIZ DO REPOSITÓRIO (SISTEMA DE FICHEIROS DO SERVIDOR)
+# RESOLUÇÃO CANÔNICA DE CAMINHOS NO SERVIDOR
 # --------------------------------------------------------------------------------------
-# '__file__' extrai a localização física absoluta do ficheiro de código atual
-# (aplicacao_fastapi.py)[cite: 3].
-# '.resolve()' converte o caminho eliminando eventuais ligações simbólicas no
-# Linux[cite: 5].
-# '.parents[n]' sobe 'n' degraus na hierarquia de pastas do projeto:
-#   - parents[0] = pilar_04_motor_inferencia_api/ (pasta local)
-#   - parents[1] = fase_06_implantacao/ (pasta da fase)
-#   - parents[2] = etapas/ (pasta de etapas)
-#   - parents[3] = src/ (pasta de código-fonte)[cite: 5]
-# - parents[4] = projeto_ml/ (a raiz absoluta do repositório onde reside a pasta
-# 'artefatos/')[cite: 5]
 DIRETORIO_RAIZ = Path(__file__).resolve().parents[4]
 
-# Monta a rota física absoluta até ao binário serializado (.joblib) do Pipeline
-# campeão[cite: 3].
-CAMINHO_ARTEFATO_BINARIO = (
-    DIRETORIO_RAIZ
-    / "artefatos"
-    / "modelos_producao"
-    / "pipeline_svm_calibrado_v1.joblib"
-)
+# Rota dos artefatos oficiais serializados no repositório[cite: 10]:
+PASTA_PRODUCAO = DIRETORIO_RAIZ / "artefatos" / "modelos_producao"
+CAMINHO_ARTEFATO_BINARIO = PASTA_PRODUCAO / "pipeline_campeao_producao.joblib"
+CAMINHO_MANIFESTO_JSON = PASTA_PRODUCAO / "pipeline_campeao_producao_manifesto.json"
 
-# Monta a rota física absoluta até à ficha técnica de governação (.json) com o hash
-# criptográfico[cite: 3].
-CAMINHO_MANIFESTO_JSON = (
-    DIRETORIO_RAIZ
-    / "artefatos"
-    / "modelos_producao"
-    / "pipeline_svm_calibrado_v1_manifesto.json"
-)
-
-# Instancia o motor de inferência matemático, injetando o ponto de corte ótimo de
-# probabilidade (0.50).
+# Instancia o motor de inferência matemático com o limiar de corte homologado (0.50)[cite: 10]:
 motor_predicao_ativo = MotorPredicaoVetorizado(limiar_corte=0.50)
+
+# Instancia a camada de serviço da plataforma agnóstica (G6): registro de datasets,
+# catálogo de problemas de negócio e gerenciador de jobs assíncronos.
+servico_plataforma = ServicoPlataforma(diretorio_raiz=DIRETORIO_RAIZ)
 
 
 # --------------------------------------------------------------------------------------
 # GESTOR DE CICLO DE VIDA ASSÍNCRONO DA APLICAÇÃO (LIFESPAN MANAGEMENT)
 # --------------------------------------------------------------------------------------
-# '@asynccontextmanager' decora a função geradora assíncrona para atuar como gestor de
-# contexto de rede.
-# 'aplicacao: FastAPI': parâmetro tipado que recebe a instância do servidor web em
-# inicialização.
 @asynccontextmanager
 async def gerenciar_ciclo_vida_servico(aplicacao: FastAPI):
-    """Gere a carga única do modelo na memória RAM na partida e liberta recursos no
-    desligamento.
-    """
-    # Bloco executado exclusivamente durante o arranque da aplicação web (Startup):
-    print(
-        "🚀 [LIFESPAN] Inicializando microserviço: auditando integridade e aquecendo"
-        "modelo na RAM..."
-    )
+    """Carrega o modelo uma única vez na memória RAM na partida e libera recursos no encerramento[cite: 10]."""
+    print("🚀 [LIFESPAN] Inicializando microsserviço: auditando integridade SHA-256 e alocando modelo na RAM...")
 
-    # Aciona o Singleton para auditar o hash SHA-256 e alocar o pipeline na memória RAM
-    # partilhada.
-    CarregadorModeloSingleton.carregar_modelo_producao(
-        caminho_artefato=CAMINHO_ARTEFATO_BINARIO,
-        caminho_manifesto=CAMINHO_MANIFESTO_JSON,
-    )
-    print(
-        "✅ [LIFESPAN] Pipeline de Machine Learning ativo na memória RAM. Servidor"
-        "pronto para atender."
-    )
+    # Se os artefatos de produção ainda não tiverem sido empacotados, alerta o administrador[cite: 10]:
+    if not CAMINHO_ARTEFATO_BINARIO.is_file():
+        print(f"⚠️ [AVISO] Artefato '{CAMINHO_ARTEFATO_BINARIO.name}' não localizado.")
+        print("Execute o empacotamento ou o script executor da Fase 6 para gerar a release de produção.")
+    else:
+        CarregadorModeloSingleton.carregar_modelo_producao(
+            caminho_artefato=CAMINHO_ARTEFATO_BINARIO,
+            caminho_manifesto=CAMINHO_MANIFESTO_JSON,
+        )
+        print("✅ [LIFESPAN] Pipeline completo ativo na memória RAM compartilhada.")
 
-    # 'yield' transfere o controlo do fluxo: o servidor começa a aceitar conexões e
-    # requisições HTTP externas.
     yield
 
-    # Bloco executado durante o encerramento gracioso do processo do servidor
-    # (Shutdown):
-    print(
-        "🛑 [LIFESPAN] Encerrando servidor: liberando recursos de memória"
-        "compartilhada..."
-    )
+    print("🛑 [LIFESPAN] Encerrando microsserviço: liberando recursos de memória...")
     CarregadorModeloSingleton.liberar_memoria()
 
 
 # --------------------------------------------------------------------------------------
 # INSTANCIAÇÃO DA APLICAÇÃO FASTAPI COM METADADOS SWAGGER OPENAPI
 # --------------------------------------------------------------------------------------
-# 'FastAPI(...)' cria o núcleo da aplicação web, compilando os esquemas para a norma
-# OpenAPI 3.1:
 aplicacao_api = FastAPI(
-    # 'title': nome corporativo exibido no cabeçalho do Swagger em '/docs'.
-    title="API de Predição de Risco Cardiovascular — Fase 6 (CRISP-DM)",
-    # 'description': texto de governação explicativa com instruções de acesso e
-    # arquitetura técnica[cite: 3].
+    title="API de Inferência e Risco de Crédito — Mercado Vencedor (CRISP-DM Fase 6)",
     description=(
-        "Microserviço corporativo de alta disponibilidade e baixa latência para"
-        "inferência clínica em tempo real.\n\n"
-        "- **Autenticação:** Exige cabeçalho `Authorization: Bearer <token_jwt>` em"
-        "rotas de predição.\n"
-        "- **Entrada de Dados:** Recebe os 10 atributos clínicos exatos via JSON no"
-        "Body validados por Pydantic V2[cite: 3].\n"
-        "- **Governança:** Pipeline auditado com assinatura criptográfica SHA-256 e"
-        "homologado na Fase 5."
+        "Microsserviço corporativo de alta disponibilidade para escoragem de risco de inadimplência em tempo real[cite: 10].\n\n"
+        "- **Autenticação:** Exige cabeçalho `Authorization: Bearer <token_jwt>` em rotas de predição[cite: 10].\n"
+        "- **Entrada de Dados:** Recebe os atributos de crédito do ERP validados via Pydantic V2[cite: 10].\n"
+        "- **Governança:** Integridade auditada via SHA-256 e homologada pelo comitê de risco[cite: 10]."
     ),
-    # 'version': identificador semântico de release do serviço web.
     version="1.0.0",
-    # 'lifespan': conecta a rotina assíncrona de inicialização de memória à aplicação
-    # web.
     lifespan=gerenciar_ciclo_vida_servico,
 )
 
 
-# 'class EsquemaRequisicaoLogin' define o contrato de dados simples para a rota pública
-# de login e emissão de tokens.
 class EsquemaRequisicaoLogin(BaseModel):
-    """Contrato simples para autenticação e emissão de credenciais temporárias de
-    portador.
-    """
-
-    # 'usuario: str' define o campo do identificador com um valor padrão para facilitar
-    # testes no Swagger.
-    usuario: str = "medico_auditor"
-    # 'senha: str' define o campo de chave secreta com a senha padrão homologada na
-    # documentação.
-    senha: str = "senha_segura_hospital_2026"
+    """Contrato simples para autenticação e emissão de tokens[cite: 10]."""
+    usuario: str = "analista_credito"
+    senha: str = os.getenv("API_SENHA_PADRAO", "senha_segura_mercado_2026")
 
 
-# --------------------------------------------------------------------------------------
-# 0. ROTA RAIZ: REDIRECIONAMENTO AMIGÁVEL PARA A DOCUMENTAÇÃO INTERATIVA (/docs)
-# --------------------------------------------------------------------------------------
-# '@aplicacao_api.get("/")' captura requisições de leitura na raiz do domínio para
-# prevenir erros 404[cite: 5].
-@aplicacao_api.get(
-    "/",
-    tags=["Navegação & Boas-Vindas"],
-    summary=(
-        "Redireciona a raiz da API diretamente para a documentação interativa Swagger"
-        "OpenAPI"
-    ),
-)
+@aplicacao_api.get("/", tags=["Navegação"], summary="Redireciona para o Swagger UI")
 async def rota_raiz():
-    """Redireciona o utilizador do navegador automaticamente para o painel interativo
-    do Swagger.
-    """
-    # Retorna um redirecionamento HTTP 307 (Temporary Redirect) apontando para a
-    # interface gráfica '/docs'.
+    """Redireciona o acesso da raiz automaticamente para o painel Swagger em /docs[cite: 10]."""
     return RedirectResponse(url="/docs")
 
 
-# --------------------------------------------------------------------------------------
-# 1. ROTA PÚBLICA: EMISSÃO DE TOKEN BEARER JWT (AUTENTICAÇÃO DE ACESSO)
-# --------------------------------------------------------------------------------------
-# '@aplicacao_api.post(...)' declara um endpoint que aceita requisições HTTP do tipo
-# POST.
 @aplicacao_api.post(
     "/autenticacao/token",
     tags=["Autenticação & Segurança"],
-    summary=(
-        "Emite uma credencial Bearer Token JWT para acesso às rotas protegidas de"
-        "inferência"
-    ),
+    summary="Emite Bearer Token JWT para acesso às rotas de inferência[cite: 10]",
 )
 async def emitir_token_acesso(dados_login: EsquemaRequisicaoLogin):
-    """Autentica as credenciais institucionais e devolve um token assinado com
-    validade de 8 horas.
-    """
-    # Validação didática de demonstração das credenciais de acesso do profissional
-    # clínico.
-    if dados_login.senha != "senha_segura_hospital_2026":
-        # Se a senha informada for incorreta, levanta erro HTTP 401 Unauthorized
-        # imediato.
+    """Autentica as credenciais institucionais e devolve o token assinado[cite: 10]."""
+    if dados_login.senha != os.getenv("API_SENHA_PADRAO", "senha_segura_mercado_2026"):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=(
-                "Credenciais incorretas: Usuário ou senha não conferem no registro"
-                "hospitalar."
-            ),
+            detail="Credenciais incorretas: Usuário ou senha não conferem no cadastro corporativo.",
         )
 
-    # Instancia o especialista criptográfico do Pilar 2 para geração da assinatura
-    # HMAC-SHA256.
     gerenciador_jwt = GerenciadorTokenJWT()
-    # Emite a credencial formatada com data de emissão e expiração calculadas em relógio
-    # UTC.
-    token = gerenciador_jwt.gerar_token_acesso(
-        identificador_usuario=dados_login.usuario
-    )
+    token = gerenciador_jwt.gerar_token_acesso(identificador_usuario=dados_login.usuario)
 
-    # Devolve o dicionário JSON em conformidade com o padrão internacional OAuth2 /
-    # Bearer RFC 6750.
     return {
         "access_token": token,
         "token_type": "bearer",
@@ -282,108 +147,229 @@ async def emitir_token_acesso(dados_login: EsquemaRequisicaoLogin):
     }
 
 
-# --------------------------------------------------------------------------------------
-# 2. ROTA DE AUDITORIA DE INFRAESTRUTURA: SONDA DE PRONTIDÃO (READINESS HEALTH PROBE)
-# --------------------------------------------------------------------------------------
-# '@aplicacao_api.get(...)' disponibiliza uma rota leve consultada periodicamente por
-# orquestradores de contentores.
 @aplicacao_api.get(
     "/saude/prontidao",
     tags=["Monitoramento & Infraestrutura"],
-    summary=(
-        "Verifica se o microserviço está operacional e com o modelo preditivo alocado"
-        "na memória RAM"
-    ),
+    summary="Verifica se o modelo está carregado e operacional na memória RAM[cite: 10]",
 )
 async def checar_prontidao():
-    """Sonda utilizada por balanceadores de carga para autorizar o envio de tráfego
-    de rede.
-    """
-    # Consulta o atributo de classe estático do Singleton sem realizar leituras no disco
-    # rígido.
+    """Sonda utilizada por balanceadores e orquestradores (Docker/K8s)[cite: 10]."""
     modelo_ativo = CarregadorModeloSingleton.obter_pipeline_ativo() is not None
-
-    # Devolve o parecer operacional com código de estado 200 OK.
     return {
-        "status": "OPERACIONAL" if modelo_ativo else "INDISPONIVEL",
+        "status": "OPERACIONAL" if modelo_ativo else "AGUARDANDO_MODELO",
         "modelo_carregado_ram": modelo_ativo,
-        "versao": "SVM_Calibrado_Producao_v1.0.0",
+        "versao": "Random_Forest_Producao_v1.0.0",
     }
 
 
-# --------------------------------------------------------------------------------------
-# 3. ROTA DE INFERÊNCIA CLÍNICA PROTEGIDA (CORPO PYDANTIC E CABEÇALHO BEARER)
-# --------------------------------------------------------------------------------------
-# 'response_model=EsquemaRespostaPredicao': força o FastAPI a validar a saída segundo o
-# contrato do Pilar 3.
 @aplicacao_api.post(
-    "/predicao/risco_cardiovascular",
+    "/predicao/risco_credito",
     response_model=EsquemaRespostaPredicao,
-    tags=["Inferência Preditiva"],
-    summary=(
-        "Executa a inferência clínica com validação de contrato no Body e autenticação"
-        "Bearer[cite: 3]"
-    ),
+    tags=["Inferência Operacional"],
+    summary="Executa a inferência de risco de crédito com autenticação Bearer e Pydantic[cite: 10]",
 )
-async def predizer_risco_paciente(
-    # 'paciente: EsquemaEntradaPaciente': o FastAPI extrai o JSON do Body e executa as
-    # validações do Pydantic[cite: 3].
-    paciente: EsquemaEntradaPaciente,
-    # 'usuario_autenticado = Depends(verificar_autorizacao_portador)': executa a catraca
-    # de segurança Bearer.
+async def predizer_risco_cliente(
+    cliente: EsquemaEntradaCliente,
     usuario_autenticado: dict[str, Any] = Depends(verificar_autorizacao_portador),
 ):
-    """Recebe as 10 variáveis no Body, audita o Bearer token e emite o parecer de
-    risco cardiovascular[cite: 3].
-    """
-    # Acede ao modelo alocado na memória RAM partilhada sem penalidade de I/O de disco.
+    """Recebe as variáveis financeiras do cliente e emite o parecer com ação recomendada[cite: 10]."""
     pipeline_ativo = CarregadorModeloSingleton.obter_pipeline_ativo()
 
-    # Checagem defensiva: se o servidor estiver em estado transitório sem o modelo,
-    # devolve erro 503.
     if pipeline_ativo is None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=(
-                "Serviço indisponível: O Pipeline de Machine Learning ainda não foi"
-                "carregado na memória."
-            ),
+            detail="Serviço indisponível: O Pipeline de Machine Learning ainda não foi alocado na memória.",
         )
 
-    # Dispara o motor de predição vetorizado que executa a matriz em linguagem C e
-    # cronometra a latência[cite: 5].
-    classe_final, probabilidade_risco, latencia_ms = (
+    # Executa a inferência vetorizada computando o tempo de resposta[cite: 10]:
+    classe, rotulo, probabilidade, faixa, acao, latencia = (
         motor_predicao_ativo.executar_predicao_rapida(
-            paciente=paciente,
+            cliente=cliente,
             pipeline_modelo=pipeline_ativo,
         )
     )
 
-    # Mapeia a decisão binária discreta para um rótulo em português legível por seres
-    # humanos:
-    rotulo = (
-        "ALTO_RISCO_CARDIOVASCULAR" if classe_final == 1 else "BAIXO_RISCO_COMPROVADO"
-    )
-
-    # Determina o grau semântico de severidade clínica para apoio aos protocolos de
-    # triagem hospitalar:
-    if probabilidade_risco >= 0.75:
-        severidade = "CRÍTICO"
-    elif classe_final == 1:
-        severidade = "ELEVADO"
-    elif probabilidade_risco >= 0.25:
-        severidade = "MODERADO"
-    else:
-        severidade = "BAIXO"
-
-    # 'return EsquemaRespostaPredicao(...)' compila e entrega o objeto JSON formal
-    # estruturado.
     return EsquemaRespostaPredicao(
-        classe_predita=classe_final,
-        diagnostico_rotulo=rotulo,
-        probabilidade_risco=round(probabilidade_risco, 4),
+        classe_predita=classe,
+        decisao_rotulo=rotulo,
+        probabilidade_risco=round(probabilidade, 4),
         limiar_decisao_aplicado=motor_predicao_ativo.limiar_corte,
-        grau_severidade=severidade,
-        versao_modelo_producao="SVM_Calibrado_Producao_v1.0.0",
-        tempo_processamento_ms=round(latencia_ms, 3),
+        faixa_risco=faixa,
+        acao_recomendada=acao,
+        versao_modelo_producao="Random_Forest_Producao_v1.0.0",
+        tempo_processamento_ms=round(latencia, 3),
     )
+
+
+# ======================================================================================
+# CAMADA DE SERVIÇO DA PLATAFORMA AGNÓSTICA (G6)
+# ======================================================================================
+class EsquemaVinculoProblema(BaseModel):
+    """Contrato de entrada para vincular um problema de negócio a um dataset."""
+
+    problema: str = Field(
+        ...,
+        description="Identificador do template no catálogo (ex.: previsao_faturamento).",
+    )
+    pergunta_negocio: Optional[str] = Field(
+        default=None,
+        description="Pergunta customizada pelo humano (opcional).",
+    )
+
+
+class EsquemaExecucaoFase(BaseModel):
+    """Contrato de entrada para disparar uma fase CRISP-DM de forma assíncrona."""
+
+    semente: int = Field(default=42, ge=0, description="Semente matemática para reprodutibilidade.")
+    problema: Optional[str] = Field(
+        default=None,
+        description="Problema de negócio a aplicar (usa o vinculado quando omitido).",
+    )
+
+
+class EsquemaEleicaoCampeao(BaseModel):
+    """Contrato de entrada para registrar a escolha humana do modelo campeão."""
+
+    modelo: str = Field(..., description="Nome exato do finalist eleito entre o Top 3.")
+
+
+@aplicacao_api.get(
+    "/datasets",
+    tags=["Plataforma Agnóstica"],
+    summary="Lista os datasets (PMEs) disponíveis com o estado de cada fase CRISP-DM",
+)
+async def listar_datasets():
+    """Retorna o catálogo de datasets registrados e seus indicadores de progresso."""
+    return {"datasets": servico_plataforma.listar_datasets()}
+
+
+@aplicacao_api.post(
+    "/datasets/{nome_dataset}/upload",
+    tags=["Plataforma Agnóstica"],
+    summary="Recebe o upload de dumps .sql ou tabelas .csv de uma PME",
+)
+async def enviar_dataset(nome_dataset: str, arquivos: list[UploadFile] = File(...)):
+    """Isola os arquivos enviados na pasta nomeada pelo dataset e atualiza o registro."""
+    if not arquivos:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nenhum arquivo foi enviado. Anexe um dump .sql ou tabelas .csv.",
+        )
+
+    conteudos: list[tuple[str, bytes]] = []
+    for arquivo in arquivos:
+        nome = arquivo.filename or "arquivo_sem_nome"
+        if Path(nome).suffix.lower() not in {".sql", ".csv"}:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Arquivo '{nome}' não suportado. Envie apenas .sql ou .csv.",
+            )
+        conteudos.append((nome, await arquivo.read()))
+
+    registro = servico_plataforma.registrar_upload(nome_dataset, conteudos)
+    return {
+        "dataset": registro.nome,
+        "arquivos_recebidos": registro.arquivos_origem,
+        "registro": registro.resumo_para_frontend(),
+    }
+
+
+@aplicacao_api.get(
+    "/problemas",
+    tags=["Plataforma Agnóstica"],
+    summary="Lista os 15 problemas de negócio pré-desenhados do motor CRISP-DM",
+)
+async def listar_problemas():
+    """Retorna os templates de contrato disponíveis para escolha do analista."""
+    return {"problemas": servico_plataforma.listar_problemas()}
+
+
+@aplicacao_api.post(
+    "/datasets/{nome_dataset}/problema",
+    tags=["Plataforma Agnóstica"],
+    summary="Vincula um contrato de problema de negócio ao dataset em análise",
+)
+async def vincular_problema(nome_dataset: str, dados: EsquemaVinculoProblema):
+    """Persiste o contrato de problema, habilitando a construção da ABT na Fase 3."""
+    try:
+        registro = servico_plataforma.vincular_problema(
+            nome_dataset=nome_dataset,
+            id_problema=dados.problema,
+            pergunta_negocio=dados.pergunta_negocio,
+        )
+    except ValueError as erro:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(erro)) from erro
+
+    return {
+        "dataset": registro.nome,
+        "contrato": registro.contrato_problema.resumo_executivo() if registro.contrato_problema else None,
+    }
+
+
+@aplicacao_api.post(
+    "/datasets/{nome_dataset}/fases/{fase}/executar",
+    tags=["Plataforma Agnóstica"],
+    summary="Dispara a execução assíncrona de uma fase CRISP-DM para o dataset",
+)
+async def executar_fase(nome_dataset: str, fase: str, dados: EsquemaExecucaoFase):
+    """Submete a fase em background e devolve o identificador do job para acompanhamento."""
+    try:
+        job = servico_plataforma.executar_fase(
+            nome_dataset=nome_dataset,
+            fase=fase,
+            semente=dados.semente,
+            problema=dados.problema,
+        )
+    except FileNotFoundError as erro:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(erro)) from erro
+    except ValueError as erro:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(erro)) from erro
+
+    return {"job": job.resumo_para_frontend()}
+
+
+@aplicacao_api.get(
+    "/jobs/{id_job}",
+    tags=["Plataforma Agnóstica"],
+    summary="Consulta o estado, o log e o resultado de um job assíncrono",
+)
+async def consultar_job(id_job: str):
+    """Retorna o retrato atual da execução acompanhada pelo frontend."""
+    job = servico_plataforma.gerenciador_jobs.obter(id_job)
+    if job is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job '{id_job}' não encontrado.",
+        )
+    return {"job": job.resumo_para_frontend()}
+
+
+@aplicacao_api.get(
+    "/datasets/{nome_dataset}/top3",
+    tags=["Plataforma Agnóstica"],
+    summary="Retorna o pódio Top 3 com as métricas de avaliação dos finalistas",
+)
+async def obter_podio(nome_dataset: str):
+    """Entrega os finalistas e suas métricas para a tela de decisão humana."""
+    return servico_plataforma.obter_top3(nome_dataset)
+
+
+@aplicacao_api.post(
+    "/datasets/{nome_dataset}/campeao",
+    tags=["Plataforma Agnóstica"],
+    summary="Registra a escolha humana do modelo campeão entre o Top 3",
+)
+async def eleger_campeao(nome_dataset: str, dados: EsquemaEleicaoCampeao):
+    """Formaliza a decisão do analista, selando o modelo que seguirá para implantação."""
+    try:
+        registro = servico_plataforma.eleger_campeao(nome_dataset, dados.modelo)
+    except FileNotFoundError as erro:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(erro)) from erro
+    except ValueError as erro:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(erro)) from erro
+
+    return {
+        "dataset": registro.nome,
+        "campeao": registro.campeao,
+        "top3": registro.top3,
+    }

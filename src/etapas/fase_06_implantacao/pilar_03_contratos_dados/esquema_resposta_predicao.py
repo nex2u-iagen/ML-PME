@@ -1,95 +1,75 @@
-"""Módulo de Contrato de Dados para Saída da Predição Clínica (Pilar 3 - Fase 6).
+"""Módulo de Contrato de Dados para Saída da Predição de Crédito (Pilar 3 - Fase 6).
 
 Responsabilidade Única: Estruturar a resposta oficial emitida pelo microserviço,
-devolvendo a decisão binária, o escore contínuo de probabilidade, o limiar de corte,
-o rótulo de severidade clínica, a versão do modelo e a latência de processamento em
-milissegundos[cite: 18].
+devolvendo a decisão binária, a probabilidade calibrada de calote, o limiar aplicado,
+a faixa de risco, a ação prescritiva de cobrança, a versão do modelo e a latência em ms[cite: 10].
 """
 
-# 'from pydantic import ...' importa os recursos de validação e anotação declarativa da
-# saída.
+# 'from pydantic import ...' importa os recursos de validação declarativa da saída da API[cite: 10].
 from pydantic import BaseModel, Field
 
 
-# 'class EsquemaRespostaPredicao' herda de 'BaseModel' para padronizar o payload JSON de
-# resposta da API.
+# 'class EsquemaRespostaPredicao' herda de 'BaseModel' para padronizar o payload JSON[cite: 10].
 class EsquemaRespostaPredicao(BaseModel):
-    """Contrato oficial de saída com a decisão preditiva e indicadores de auditoria
-    de governança[cite: 18].
-    """
+    """Contrato oficial de saída com a decisão preditiva e indicadores de governança financeira[cite: 10]."""
 
-    # Decisão final discreta (0 ou 1) calculada após o corte do limiar homologado[cite:
-    # 18].
+    # Decisão final discreta (0 = Em Dia, 1 = Risco Inadimplente)[cite: 10].
     classe_predita: int = Field(
         ...,
-        description=(
-            "Decisão binária da máquina (0: Sem Risco Cardiovascular Imediato, 1: Risco"
-            "Crítico)."
-        ),
-        examples=[1],
+        description="Decisão binária da IA (0: Bom Pagador / Em Dia, 1: Risco de Inadimplência)[cite: 10].",
+        examples=[0],
     )
 
-    # Rótulo em linguagem natural para leitura imediata pela equipa médica no
-    # prontuário.
-    diagnostico_rotulo: str = Field(
+    # Rótulo em linguagem natural legível pelo comitê de crédito e caixas[cite: 10].
+    decisao_rotulo: str = Field(
         ...,
-        description="Descrição nominal em texto claro da decisão clínica emitida.",
-        examples=["ALTO_RISCO_CARDIOVASCULAR"],
+        description="Descrição nominal em texto claro da decisão emitida[cite: 10].",
+        examples=["RISCO_INADIMPLENCIA_MITIGADO"],
     )
 
-    # Probabilidade contínua estimada P(y = 1 | X) entre 0.0 e 1.0 gerada pelo SVM
-    # Calibrado[cite: 18].
+    # Escore de probabilidade contínua P(y=1) entre 0.0 e 1.0[cite: 10, 11].
     probabilidade_risco: float = Field(
         ...,
         ge=0.0,
         le=1.0,
-        description=(
-            "Escore de probabilidade calibrada de evento cardiovascular (entre 0.0 e"
-            "1.0)[cite: 18]."
-        ),
-        examples=[0.8425],
+        description="Escore de probabilidade calibrada de atraso superior a 30 dias[cite: 10, 11].",
+        examples=[0.0412],
     )
 
-    # Limiar de corte de probabilidade utilizado para classificar a amostra como
-    # risco[cite: 18].
+    # Limiar ótimo de decisão homologado no comitê da Fase 5[cite: 10].
     limiar_decisao_aplicado: float = Field(
         ...,
         ge=0.0,
         le=1.0,
-        description=(
-            "Ponto de corte ótimo probabilístico homologado para prevenção de"
-            "negligência[cite: 18]."
-        ),
+        description="Ponto de corte ótimo de probabilidade homologado na Fase 5[cite: 10].",
         examples=[0.50],
     )
 
-    # Categoria semântica de gravidade para priorização na fila de atendimento (Triage).
-    grau_severidade: str = Field(
+    # Faixa de classificação de crédito do cliente[cite: 10].
+    faixa_risco: str = Field(
         ...,
-        description=(
-            "Classificação de triagem do paciente (BAIXO, MODERADO, ELEVADO ouCRÍTICO)."
-        ),
-        examples=["CRÍTICO"],
+        description="Classificação de apetite a risco (BAIXO RISCO, MÉDIO RISCO ou ALTO RISCO)[cite: 10].",
+        examples=["BAIXO RISCO"],
     )
 
-    # Identificador semântico da versão do modelo em execução na memória RAM do
-    # servidor.
+    # Ação prescritiva recomendada para a esteira operacional do supermercado[cite: 10].
+    acao_recomendada: str = Field(
+        ...,
+        description="Diretriz prescritiva para o setor financeiro e frente de caixa[cite: 10].",
+        examples=["Liberar Faturamento / Manter Crédito Automático"],
+    )
+
+    # Versão semântica oficial do modelo serializado ativo na memória[cite: 10].
     versao_modelo_producao: str = Field(
         ...,
-        description=(
-            "Versão e assinatura do artefato homologado em execução no microserviço."
-        ),
-        examples=["SVM_Calibrado_Producao_v1.0.0"],
+        description="Versão e assinatura do artefato homologado em execução[cite: 10].",
+        examples=["Random_Forest_Producao_v1.0.0"],
     )
 
-    # Tempo computacional puro de inferência medido em frações de milissegundo[cite:
-    # 18].
+    # Tempo computacional de inferência aferido em milissegundos[cite: 10].
     tempo_processamento_ms: float = Field(
         ...,
         ge=0.0,
-        description=(
-            "Latência computacional de inferência pura aferida em milissegundos[cite:"
-            "18]."
-        ),
-        examples=[1.42],
+        description="Latência computacional de inferência pura em milissegundos[cite: 10].",
+        examples=[0.85],
     )

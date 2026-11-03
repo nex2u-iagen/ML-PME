@@ -22,6 +22,7 @@ a identidade do usuário autenticado e o controle estrito de vigência temporal 
 # o sistema contra horários de verão[cite: 4, 7].
 from datetime import UTC, datetime, timedelta
 from typing import Any
+import os
 
 # 'import' carrega a biblioteca oficial PyJWT (instalada no ambiente virtual) para
 # cifragem e decifragem de tokens RFC 7519[cite: 17].
@@ -50,7 +51,7 @@ class GerenciadorTokenJWT:
     # (retorno nulo)[cite: 7].
     def __init__(
         self,
-        chave_secreta: str = "CHAVE_MESTRE_SUPER_SECRETA_PRODUCAO_MINIMO_32_BYTES_2026",
+        chave_secreta: str | None = None,
         algoritmo: str = "HS256",
         tempo_expiracao_minutos: int = 480,
     ) -> None:
@@ -59,7 +60,7 @@ class GerenciadorTokenJWT:
 
         Args:
             chave_secreta (str): Segredo privado para assinatura digital do token[cite:
-            17].
+            17]. Se None, lê da variável de ambiente JWT_SECRET_KEY.
             algoritmo (str): Algoritmo de hash criptográfico utilizado (Padrão:
             HS256)[cite: 17].
             tempo_expiracao_minutos (int): Tempo limite de vigência da sessão em
@@ -67,6 +68,9 @@ class GerenciadorTokenJWT:
         """
         # 'self.chave_secreta' armazena o segredo no estado da instância para ser
         # reutilizado nos métodos encode e decode[cite: 7].
+        # Se não foi informado, lê da variável de ambiente JWT_SECRET_KEY.
+        if chave_secreta is None:
+            chave_secreta = os.getenv("JWT_SECRET_KEY", "CHAVE_MESTRE_SUPER_SECRETA_PRODUCAO_MINIMO_32_BYTES_2026")
         self.chave_secreta = chave_secreta
 
         # 'self.algoritmo' registra formalmente o algoritmo aprovado pelo comitê de

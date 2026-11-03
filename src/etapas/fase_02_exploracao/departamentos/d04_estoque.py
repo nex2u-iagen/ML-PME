@@ -1,364 +1,181 @@
-"""Módulo de Diagnóstico Exploratório do Departamento de Estoque (Fase 2.4).
+"""Módulo de Diagnóstico Exploratório do Departamento de Estoque (Fase 2.4 - CRISP-DM).
 
-Implementa a classificação da Curva ABC por valor imobilizado, cálculo
-de dias de cobertura de estoque, giro de mercadorias e alerta de ruptura
-para Pequenas e Médias Empresas (PMEs).
+Responsabilidade Única: Avaliar a alocação de capital físico do almoxarifado,
+calcular a cobertura de estoque e gerar a classificação da Curva ABC, consumindo
+exclusivamente os dados reais (saldos e custos) mapeados pelo Adaptador Universal.
 """
 
-# 'import' é a palavra-chave reservada do Python utilizada para carregar bibliotecas
-# externas ou nativas.
-# Carregamos o módulo 'logging' da biblioteca padrão para registrar mensagens com nível
-# de severidade no terminal.
+# 'import logging' gerencia as mensagens de auditoria técnica no console corporativo[cite: 5].
 import logging
 
-# 'from' indica a biblioteca ou módulo de onde extrairemos uma ferramenta específica.
-# 'pathlib' é o módulo padrão do Python para manipulação orientada a objetos de caminhos
-# no sistema de arquivos.
-# 'import' traz a classe 'Path' para representar diretórios e caminhos compatíveis com
-# Windows, Linux e Mac.
+# 'from pathlib import Path' provê a manipulação orientada a objetos de pastas no sistema operacional[cite: 5].
 from pathlib import Path
 
-# 'from' acessa o módulo 'typing' da biblioteca padrão, voltado para anotações de
-# tipagem estática (Type Hints).
-# 'import' carrega 'Any' (que aceita qualquer tipo de objeto) e 'Dict' (que documenta
-# dicionários de chave e valor).
-from typing import Any
+# 'from typing import Any, Dict' importa anotações de tipagem estática para estruturas de dicionários[cite: 5].
+from typing import Any, Dict
 
-# 'import' traz o submódulo 'pyplot' da biblioteca 'matplotlib', responsável pelo
-# controle de telas e figuras gráficas.
-# 'as' cria o apelido reduzido 'plt', convenção universal na Ciência de Dados para
-# economizar digitação.
+# 'import matplotlib.pyplot as plt' inicializa o motor de baixo nível para criação de telas e eixos gráficos[cite: 5].
 import matplotlib.pyplot as plt
 
-# 'import' traz a biblioteca externa 'pandas', a principal ferramenta para criação e
-# manipulação de tabelas em memória.
-# 'as' define o apelido oficial 'pd' para facilitar chamadas de métodos como DataFrames
-# e Series.
+# 'import pandas as pd' carrega a biblioteca estrutural para agregações, ordenações e matemática tabular[cite: 5].
 import pandas as pd
 
-# 'import' traz a biblioteca 'seaborn', especializada em renderizar gráficos
-# estatísticos com acabamento visual corporativo.
-# 'as' define o apelido clássico 'sns'.
+# 'import seaborn as sns' importa o framework gráfico para visualizações estéticas corporativas (Curva ABC)[cite: 5].
 import seaborn as sns
 
-# 'from' navega até o arquivo 'base_departamento.py' localizado no diretório pai de
-# exploração.
-# 'import' traz a classe abstrata 'BaseDepartamento' para herdarmos a infraestrutura
-# pronta do núcleo por herança OOP.
+# Importação da classe base abstrata que injeta ferramentas e o Adaptador Universal por herança[cite: 5].
 from src.etapas.fase_02_exploracao.base_departamento import BaseDepartamento
 
+# Importação do extrator de lançamentos reais de PDV — única fonte com nome de
+# produto por item vendido (o dump não exporta a tabela de itens de nota).
+from src.etapas.fase_02_exploracao.adaptadores.extrator_pdv import carregar_itens_pdv
 
-# 'class' é a palavra-chave que declara um novo modelo estrutural orientado a objetos.
-# 'AnalisadorEstoque' é o nome da nossa classe especializada em auditoria de materiais,
-# em estilo PascalCase.
-# '(BaseDepartamento)' entre parênteses estabelece herança formal: esta classe herda
-# recursos da classe base mãe.
+
+# 'class AnalisadorEstoque(BaseDepartamento)' especializa o diagnóstico do almoxarifado herdando a infraestrutura[cite: 5].
 class AnalisadorEstoque(BaseDepartamento):
-    """Classe responsável pelo diagnóstico de armazenagem, giro e curva ABC de
-    produtos.
-    """
+    """Classe responsável pelo diagnóstico de armazenagem, capital imobilizado e Curva ABC do ERP[cite: 5]."""
 
-    # 'def' define o método construtor especial '__init__', acionado no momento da
-    # criação do objeto em memória RAM.
-    # 'self' referencia a própria instância acessando seus atributos internos.
-    # 'pasta_dados_brutos: Path' é um parâmetro obrigatório exigindo o caminho onde
-    # estão as tabelas CSV do ERP.
-    # 'pasta_relatorios: Path' é o caminho raiz onde os laudos e imagens deste
-    # departamento serão gravados.
-    # '-> None' atesta formalmente que o método inicializador não retorna nenhum dado.
+    # 'def __init__(...)' constrói a instância do analisador de estoque registrando a pasta setorial de destino[cite: 5].
     def __init__(self, pasta_dados_brutos: Path, pasta_relatorios: Path) -> None:
-        """Inicializa o departamento de estoque registrando a subpasta dedicada.
+        """Inicializa o departamento de estoque registrando seu nome canônico para criação de diretórios[cite: 5].
 
         Args:
-            pasta_dados_brutos (Path): Diretório com as tabelas brutas do ERP.
-            pasta_relatorios (Path): Diretório base de saída dos laudos analíticos.
+            pasta_dados_brutos (Path): Diretório isolado contendo as tabelas reais do ERP (ex: mercado_vencedor/)[cite: 5].
+            pasta_relatorios (Path): Diretório base de saída onde a subpasta 'estoque/' será criada e mantida[cite: 5].
         """
-        # 'super().__init__' aciona o construtor da classe mãe BaseDepartamento para
-        # registrar pastas e ferramentas.
-        # Passamos 'pasta_dados_brutos' e 'pasta_relatorios' e nomeamos o departamento
-        # formalmente como 'estoque'.
+        # 'super().__init__(...)' aciona o construtor da classe base registrando 'estoque' como identificador canônico[cite: 5].
         super().__init__(
             pasta_dados_brutos=pasta_dados_brutos,
             pasta_relatorios=pasta_relatorios,
             nome_departamento="estoque",
         )
 
-    # 'def' define o método responsável por carregar a posição física e financeira do
-    # estoque do ERP.
-    # '-> pd.DataFrame' documenta que a função devolverá uma matriz tabular
-    # bidimensional do pandas.
+    # 'def carregar_dados_estoque(...)' delega a busca dos saldos de inventário para o Adaptador Universal[cite: 5].
     def carregar_dados_estoque(self) -> pd.DataFrame:
-        """Carrega a tabela de saldos de estoque e custos médios unitários do ERP.
+        """Solicita ao Adaptador Universal a tabela canônica contendo o inventário físico e financeiro real[cite: 5].
 
         Returns:
-            pd.DataFrame: Tabela contendo SKUs, quantidades em estoque, custo e consumo
-            médio.
+            pd.DataFrame: Tabela real unificada com id_produto, saldo físico, custo unitário e valor imobilizado[cite: 5].
+
+        Raises:
+            ValueError: Se o adaptador não conseguir localizar dados de estoque na base sob perícia[cite: 5].
         """
-        # O operador '/' une os caminhos de forma nativa via Pathlib, gerando o endereço
-        # exato do arquivo CSV.
-        caminho_estoque = self.pasta_dados_brutos / "erp_saldos_estoque.csv"
+        # 'self.adaptador.obter_visao_estoque_materiais()' aciona a tradução semântica herdada da classe mãe[cite: 5].
+        # O adaptador localizará tabelas como 'erp_prodestoque.csv' e estruturará os dados canônicos[cite: 5].
+        df_estoque = self.adaptador.obter_visao_estoque_materiais()
 
-        # '.is_file()' testa fisicamente se o arquivo existe no disco rígido.
-        # 'if not' atua defensivamente: se o arquivo não existir, geramos uma base
-        # didática representativa da PME.
-        if not caminho_estoque.is_file():
-            # 'logging.info' emite um aviso no terminal informando que a base de
-            # contingência foi iniciada.
-            logging.info(
-                "Estoque — Base não localizada. Gerando posições de inventário"
-                "sintéticas..."
-            )
+        # Validação defensiva: se o DataFrame retornar vazio, bloqueia a esteira e emite erro crítico no console[cite: 5].
+        if df_estoque is None or df_estoque.empty:
+            logging.error("Estoque — Falha crítica: Nenhum saldo de materiais real foi retornado pelo Adaptador Universal.")
+            raise ValueError("Dados de estoque reais não encontrados na base de dados (dump) sob perícia.")
 
-            # 'dados_simulados' é um dicionário Python ('{}') contendo listas
-            # estruturadas com produtos industriais.
-            dados_simulados = {
-                # Lista de códigos numéricos de identificação única de cada produto
-                # (SKUs).
-                "id_produto": [
-                    201,
-                    202,
-                    203,
-                    204,
-                    205,
-                    206,
-                    207,
-                    208,
-                ],
-                # Lista com as descrições textuais nominais dos materiais cadastrados no
-                # almoxarifado.
-                "descricao_produto": [
-                    "Mesa Jantar Carvalho",
-                    "Cadeira Estofada Luxo",
-                    "Verniz Poliuretano 5L",
-                    "Parafuso Sextavado 50mm",
-                    "Puxador Alumínio Escovado",
-                    "Cola Madeira Industrial",
-                    "Armário 2 Portas",
-                    "Dobradiça com Amortecedor",
-                ],
-                # Quantidade física de unidades atualmente armazenadas no depósito
-                # físico da PME.
-                "quantidade_saldo": [
-                    12,
-                    48,
-                    25,
-                    1200,
-                    350,
-                    40,
-                    5,
-                    800,
-                ],
-                # Custo contábil médio de aquisição ou fabricação unitária em reais
-                # (R$).
-                "custo_unitario": [
-                    850.0,
-                    180.0,
-                    120.0,
-                    0.45,
-                    15.0,
-                    45.0,
-                    1400.0,
-                    6.50,
-                ],
-                # Demanda ou consumo médio mensal de cada item nas operações da PME.
-                "consumo_mensal_medio": [
-                    4,
-                    16,
-                    8,
-                    300,
-                    90,
-                    15,
-                    2,
-                    220,
-                ],
-            }
+        # 'logging.info' documenta o sucesso da operação reportando o volume de SKUs carregados no almoxarifado[cite: 5].
+        logging.info("Estoque — Base canônica carregada com sucesso contendo %d SKUs físicos reais.", len(df_estoque))
 
-            # 'pd.DataFrame' converte a estrutura de dicionário em uma matriz tabular do
-            # pandas em memória RAM.
-            df_estoque = pd.DataFrame(dados_simulados)
-
-            # Multiplica a quantidade em saldo pelo custo unitário para calcular o
-            # capital imobilizado por SKU.
-            # '.round(2)' arredonda o resultado financeiro para duas casas decimais
-            # (centavos em R$).
-            df_estoque["valor_imobilizado"] = (
-                df_estoque["quantidade_saldo"] * df_estoque["custo_unitario"]
-            ).round(2)
-
-            # '.to_csv' grava a tabela gerada no disco rígido para permitir auditorias
-            # posteriores.
-            # 'index=False' impede que o pandas crie uma coluna extra de números
-            # desnecessária no arquivo físico.
-            df_estoque.to_csv(caminho_estoque, index=False)
-        else:
-            # Caso o arquivo já exista fisicamente no disco rígido, usamos o leitor
-            # herdado da classe base.
-            df_estoque = self.leitor.carregar_tabela(caminho_estoque)
-
-        # 'logging.info' imprime no console o total de produtos monitorados no
-        # almoxarifado.
-        logging.info(
-            "Estoque — Base consolidada com %d SKUs monitorados.", len(df_estoque)
-        )
-
-        # 'return' devolve a matriz tabular pronta para os cálculos estatísticos e de
-        # negócio.
+        # Devolve a matriz de inventário pronta para os cálculos de cobertura e Pareto[cite: 5].
         return df_estoque
 
-    # KPI 32: Cobertura de Estoque em Dias (Dias de Autonomia Operacional sem Novas
-    # Compras).
-    # 'def' define a função especializada em calcular a autonomia do estoque.
+    # 'def calcular_dias_cobertura(...)' afere o tempo de autonomia da PME considerando o consumo histórico[cite: 5].
     def calcular_dias_cobertura(self, dados: pd.DataFrame) -> pd.DataFrame:
-        """Calcula quantos dias o estoque atual dura considerando o consumo médio
-        mensal.
+        """Calcula quantos dias o saldo atual do almoxarifado suporta a operação antes de uma ruptura de estoque[cite: 5].
+
+        Dias de Cobertura = Quantidade em Saldo / Consumo Diário Médio.
 
         Args:
-            dados (pd.DataFrame): Tabela contendo saldos e consumo médio.
+            dados (pd.DataFrame): Tabela de materiais reais com as colunas de saldo e consumo médio[cite: 5].
 
         Returns:
-            pd.DataFrame: Tabela enriquecida com a métrica 'dias_cobertura'.
+            pd.DataFrame: Tabela enriquecida com a nova métrica 'dias_cobertura' projetada[cite: 5].
         """
-        # '.copy()' cria uma cópia profunda da tabela para evitar avisos de escrita
-        # acidental em memória (SettingWithCopyWarning).
+        # '.copy()' isola as alterações em uma cópia independente, prevenindo o erro SettingWithCopyWarning do pandas[cite: 5].
         dados_processados = dados.copy()
 
-        # Divide o consumo médio mensal por 30.0 dias para encontrar o consumo diário
-        # estimado.
+        # Calcula a taxa diária dividindo o consumo mensal (30 dias) pela base de projeção[cite: 5].
         consumo_diario = dados_processados["consumo_mensal_medio"] / 30.0
 
-        # Divide o saldo físico pelo consumo diário para encontrar quantos dias o
-        # estoque suporta a operação.
-        # '.round(1)' arredonda o número de dias com uma casa decimal (ex.: 45.2 dias).
-        dados_processados["dias_cobertura"] = (
-            dados_processados["quantidade_saldo"] / consumo_diario
-        ).round(1)
+        # Divide o saldo físico pelo consumo projetado. '.round(1)' limita o resultado a uma casa decimal (ex: 15.2 dias)[cite: 5].
+        dados_processados["dias_cobertura"] = (dados_processados["quantidade_saldo"] / consumo_diario).round(1)
 
-        # 'logging.info' registra a conclusão do cálculo de dias de cobertura no log de
-        # auditoria.
-        logging.info("Estoque — Indicador de Dias de Cobertura calculado com sucesso.")
+        # Emite log confirmando que a autonomia operacional de todos os materiais foi aferida com sucesso[cite: 5].
+        logging.info("Estoque — Indicador de Dias de Cobertura projetado com sucesso.")
 
-        # 'return' devolve a tabela atualizada com a nova coluna analítica.
+        # Retorna o DataFrame com a coluna de dias de cobertura pronta para análises subsequentes[cite: 5].
         return dados_processados
 
-    # KPI 34: Classificação da Curva ABC por Valor Financeiro Imobilizado (Princípio de
-    # Pareto 80/15/5).
-    # 'def' declara o método responsável pela segregação de materiais.
+    # 'def calcular_curva_abc(...)' executa a classificação de Pareto sobre o capital retido em mercadorias[cite: 5].
     def calcular_curva_abc(self, dados: pd.DataFrame) -> pd.DataFrame:
-        """Classifica os produtos em classes A (80%), B (15%) e C (5%) segundo o capital
-        preso.
+        """Classifica os produtos do armazém em classes A (80%), B (15%) e C (5%) baseando-se no valor imobilizado[cite: 5].
 
         Args:
-            dados (pd.DataFrame): Tabela de posições de estoque.
+            dados (pd.DataFrame): Tabela de posições de estoque com o 'valor_imobilizado' previamente calculado[cite: 5].
 
         Returns:
-            pd.DataFrame: Tabela ordenada com a coluna 'classe_abc' devidamente
-            calculada.
+            pd.DataFrame: Tabela contendo os produtos ordenados e rotulados matematicamente na coluna 'classe_abc'[cite: 5].
         """
-        # '.sort_values()' ordena os produtos pelo valor imobilizado de forma
-        # decrescente (do maior para o menor).
-        # 'ascending=False' garante que os itens que prendem mais dinheiro fiquem no
-        # topo da tabela.
-        # '.copy()' isola a nova ordenação em uma estrutura independente.
+        # '.sort_values(..., ascending=False)' ordena as linhas de forma decrescente pelo capital investido[cite: 5].
+        # Garante que as mercadorias mais valiosas da empresa liderem o cálculo cumulativo[cite: 5].
         df_ordenado = dados.sort_values(by="valor_imobilizado", ascending=False).copy()
 
-        # '.cumsum()' (Cumulative Sum) calcula a soma acumulada progressiva do capital
-        # imobilizado linha a linha.
+        # '.cumsum()' (Cumulative Sum) executa a soma cumulativa progressiva dos valores imobilizados linha a linha[cite: 5].
         df_ordenado["valor_acumulado"] = df_ordenado["valor_imobilizado"].cumsum()
 
-        # '.sum()' calcula o valor financeiro total de todo o armazém da empresa;
-        # 'float()' garante precisão numérica.
+        # '.sum()' calcula o total financeiro (100%) retido em todo o estoque da organização[cite: 5].
         total_estoque = float(df_ordenado["valor_imobilizado"].sum())
 
-        # Calcula a porcentagem acumulada do estoque dividindo a soma progressiva pelo
-        # valor total geral.
-        # Multiplicamos por 100 para transformar em escala percentual (de 0.0% a
-        # 100.0%).
-        df_ordenado["percentual_acumulado"] = (
-            df_ordenado["valor_acumulado"] / total_estoque
-        ) * 100
+        # Projeta a soma cumulativa em escala percentual (0 a 100%) dividindo pelo valor total da fábrica[cite: 5].
+        df_ordenado["percentual_acumulado"] = (df_ordenado["valor_acumulado"] / total_estoque) * 100
 
-        # 'def' define uma função auxiliar interna para classificar o percentual nas
-        # três faixas de Pareto.
+        # Função de roteamento interno: mapeia o percentual acumulado para as letras da Matriz de Pareto[cite: 5].
         def classificar_faixa(percentual: float) -> str:
-            # 'if' avalia se o produto está dentro dos primeiros 80% do capital
-            # acumulado da empresa.
+            # Produtos cuja soma representa até os primeiros 80% do capital retido são a Classe A (Gargalos/Estratégicos)[cite: 5].
             if percentual <= 80.0:
-                # Retorna a categoria 'A' (os itens mais valiosos e críticos do
-                # estoque).
                 return "A"
-            # 'elif' avalia se o produto compõe os 15% intermediários (entre 80% e 95%
-            # do capital).
+            # Produtos que elevam a soma de 80.01% até 95% do capital recebem a Classe B (Atenção Intermediária)[cite: 5].
             elif percentual <= 95.0:
-                # Retorna a categoria 'B' (itens de importância intermediária).
                 return "B"
-            # 'return' final classifica o restante dos produtos nos últimos 5% do
-            # capital (muito volume, pouco dinheiro).
+            # Os produtos restantes, que compõem apenas os 5% finais do valor (mas grande volume físico), são Classe C[cite: 5].
             return "C"
 
-        # '.apply(classificar_faixa)' executa a função lógica linha por linha sobre a
-        # coluna de percentual acumulado.
-        df_ordenado["classe_abc"] = df_ordenado["percentual_acumulado"].apply(
-            classificar_faixa
-        )
+        # '.apply(...)' aciona a função de roteamento linha por linha sobre a coluna de proporção acumulada[cite: 5].
+        df_ordenado["classe_abc"] = df_ordenado["percentual_acumulado"].apply(classificar_faixa)
 
-        # 'logging.info' emite um resumo no console contabilizando quantos produtos
-        # caíram em cada classe.
+        # Documenta a distribuição da curva de criticidade no console para auditoria do controlador financeiro[cite: 5].
         logging.info(
-            "Estoque — Curva ABC concluída. Itens Classe A: %d | Classe B: %d | Classe"
-            "C: %d.",
+            "Estoque — Curva ABC concluída. Itens Classe A: %d | Classe B: %d | Classe C: %d.",
             (df_ordenado["classe_abc"] == "A").sum(),
             (df_ordenado["classe_abc"] == "B").sum(),
             (df_ordenado["classe_abc"] == "C").sum(),
         )
 
-        # 'return' devolve a tabela classificada com as faixas ABC.
+        # Devolve a tabela devidamente estratificada pelas faixas de criticidade gerenciais[cite: 5].
         return df_ordenado
 
-    # 'def' define o método especialista em renderizar o gráfico visual da Curva ABC.
-    # 'caminho_figura' será devolvido como um objeto Path indicando o arquivo PNG
-    # gravado no disco.
+    # 'def gerar_grafico_curva_abc(...)' renderiza o diagrama visual de capital por classe de criticidade[cite: 5].
     def gerar_grafico_curva_abc(self, dados: pd.DataFrame) -> Path:
-        """Renderiza o gráfico de barras da Curva ABC colorido pelas classes de
-        criticidade.
+        """Renderiza o gráfico de barras categorizado pela classificação ABC de retenção financeira[cite: 5].
 
         Args:
-            dados (pd.DataFrame): Tabela classificada com as classes A, B e C.
+            dados (pd.DataFrame): Tabela contendo os materiais reais, os valores imobilizados e as classes (A/B/C)[cite: 5].
 
         Returns:
-            Path: Endereço do arquivo de imagem salvo em alta definição (300 DPI).
+            Path: Endereço do arquivo PNG persistido em alta resolução geométrica (300 DPI) no disco[cite: 5].
         """
-        # 'self.pasta_saida' aponta para a pasta 'relatorios/figuras/estoque/', criada
-        # pelo construtor base.
+        # Limita visualmente o gráfico aos 25 produtos mais valiosos para impedir poluição ou quebra de escala no eixo X[cite: 5].
+        if len(dados) > 25:
+            dados = dados.head(25)
+
+        # Monta a rota de destino do gráfico concatenando o nome do arquivo ao diretório setorial 'estoque/'[cite: 5].
         caminho_figura = self.pasta_saida / "curva_abc_valor_imobilizado.png"
 
-        # 'plt.subplots()' cria a moldura da figura gráfica com 10 polegadas de largura
-        # por 5 de altura.
-        # 'figura' representa a tela global; 'eixo' é a área interna onde as barras
-        # serão desenhadas.
+        # 'plt.subplots(figsize=(10, 5))' dimensiona a tela do Matplotlib para 10 polegadas de largura por 5 de altura[cite: 5].
         figura, eixo = plt.subplots(figsize=(10, 5))
 
-        # 'paleta_cores' é um dicionário que mapeia cores semânticas: Vermelho para
-        # Classe A, Laranja para B e Azul para C.
-        paleta_cores = {
-            "A": "#d62728",
-            "B": "#ff7f0e",
-            "C": "#1f77b4",
-        }
+        # Define um dicionário cromático rígido: Vermelho crítico para A, Laranja alerta para B, Azul padrão para C[cite: 5].
+        paleta_cores = {"A": "#d62728", "B": "#ff7f0e", "C": "#1f77b4"}
 
-        # 'sns.barplot' desenha as barras verticais no Seaborn representando o valor
-        # imobilizado por SKU.
-        # 'data=dados' fornece a tabela de estoque ordenada.
-        # 'x="descricao_produto"' define os nomes dos materiais no eixo horizontal.
-        # 'y="valor_imobilizado"' projeta a altura das barras correspondente ao valor em
-        # reais no eixo vertical.
-        # 'hue="classe_abc"' colore cada barra de acordo com a sua classe de criticidade
-        # de Pareto.
-        # 'palette=paleta_cores' aplica as cores semânticas personalizadas que definimos
-        # no dicionário.
-        # 'dodge=False' mantém as barras alinhadas verticalmente sem deslocamentos
-        # laterais indesejados.
-        # 'ax=eixo' manda o Seaborn desenhar dentro da moldura que configuramos no
-        # matplotlib.
+        # 'sns.barplot(...)' delega ao Seaborn o desenho das barras verticais utilizando os dados da Curva ABC[cite: 5].
+        # - 'hue="classe_abc"' e 'palette=paleta_cores': garante que cada barra respeite a cor estipulada no dicionário[cite: 5].
+        # - 'dodge=False': impede deslocamentos laterais indesejados nas barras por efeito de agrupamento[cite: 5].
         sns.barplot(
             data=dados,
             x="descricao_produto",
@@ -369,85 +186,285 @@ class AnalisadorEstoque(BaseDepartamento):
             ax=eixo,
         )
 
-        # 'eixo.set_title' define o título no topo da imagem com tamanho 13 e
-        # espaçamento de 12 pontos.
+        # 'eixo.set_title(...)' crava o cabeçalho executivo no topo da imagem com tamanho 13 e padding 12[cite: 5].
+        eixo.set_title("Curva ABC de Estoque por Valor Financeiro Imobilizado (R$)", fontsize=13, pad=12)
+
+        # Rótulos textuais em português do Brasil parametrizando os eixos cartesiano horizontal e vertical[cite: 5].
+        eixo.set_xlabel("Produto Cadastrado (Descrição / SKU)", fontsize=10)
+        eixo.set_ylabel("Capital Retido (R$)", fontsize=10)
+
+        # 'plt.xticks(...)' executa rotação ortogonal leve (45 graus) e alinhamento à direita nos nomes dos produtos[cite: 5].
+        # Essa prática impede sobreposição de texto em nomes longos de SKUs do supermercado[cite: 5].
+        plt.xticks(rotation=45, ha="right")
+
+        # 'plt.tight_layout()' instrui o motor a espremer/expandir as margens dinamicamente para preservar todo o texto[cite: 5].
+        plt.tight_layout()
+
+        # '.savefig(caminho, dpi=300)' serializa a imagem em pixels na unidade de armazenamento com qualidade para impressão gráfica[cite: 5].
+        figura.savefig(caminho_figura, dpi=300)
+
+        # '.close(figura)' emite o comando de expurgo da memória RAM, vital para prevenir Memory Leaks no servidor[cite: 5].
+        plt.close(figura)
+
+        # 'logging.info' consolida a auditoria registrando o salvamento bem-sucedido da peça visual no log de execução[cite: 5].
+        logging.info("Estoque — Gráfico da Curva ABC exportado com sucesso para: %s", caminho_figura.name)
+
+        # Retorna o ponteiro físico para incorporação da imagem em relatórios subsequentes[cite: 5].
+        return caminho_figura
+
+    # 'def' define o método responsável por carregar os lançamentos reais de PDV
+    # (nome do produto, quantidade, unidade e valor) para a análise de giro.
+    def carregar_itens_pdv(self) -> pd.DataFrame:
+        """Recupera os itens reais lançados no caixa para a análise de produtos.
+
+        Returns:
+            pd.DataFrame: Tabela de itens do PDV (produto, quantidade, unidade,
+            valor). Retorna tabela vazia quando o dataset não possui log de
+            auditoria — o chamador aciona então o plano B (Curva ABC).
+        """
+        # Delega a extração ao extrator especialista apontando para a pasta bruta
+        # do dataset ativo (resolvida pelo adaptador universal).
+        df_itens = carregar_itens_pdv(self.adaptador.pasta_erp)
+
+        # Confirma no log a volumetria efetivamente disponível para o giro.
+        if df_itens.empty:
+            logging.warning(
+                "Estoque — Sem lançamentos de PDV; a análise de produtos usará "
+                "o plano de Curva ABC (valor imobilizado)."
+            )
+        else:
+            logging.info(
+                "Estoque — %d itens reais de PDV carregados para a análise de "
+                "giro por produto.",
+                len(df_itens),
+            )
+
+        return df_itens
+
+    # 'def calcular_top_10_produtos(...)' apura o giro dos produtos mais vendidos[cite: 5].
+    def calcular_top_10_produtos(
+        self, itens: pd.DataFrame
+    ) -> tuple[Dict[str, Any], pd.DataFrame]:
+        """Ranqueia os 10 produtos que mais faturaram no período de log do PDV.
+
+        Args:
+            itens (pd.DataFrame): Itens reais do PDV com produto, quantidade,
+            unidade, valor e ano_mes.
+
+        Returns:
+            tuple: dicionário-resumo (período, totais, top_10) e o DataFrame do
+            Top 10 pronto para plotagem.
+        """
+        # Base vazia devolve resumo vazio (o chamador aciona o plano B).
+        if itens.empty:
+            return {}, pd.DataFrame()
+
+        # Agrupa por produto SOMENTE (nomes já normalizados pelo extrator).
+        agrupado = itens.groupby("produto").agg(
+            faturamento=("valor", "sum"),
+            lancamentos=("valor", "count"),
+        )
+
+        # Volume físico: soma a quantidade por unidade e assume a unidade
+        # dominante do produto (um SKU é vendido em uma única unidade de
+        # comercialização — KG, UN, LT etc.).
+        por_unidade = (
+            itens.groupby(["produto", "unidade"])["quantidade"].sum().reset_index()
+        )
+        por_unidade = por_unidade.sort_values(
+            "quantidade", ascending=False
+        ).drop_duplicates("produto")
+        por_unidade = por_unidade.set_index("produto")
+
+        agrupado["quantidade"] = por_unidade["quantidade"]
+        agrupado["unidade"] = por_unidade["unidade"]
+        agrupado["quantidade"] = agrupado["quantidade"].fillna(0.0)
+
+        # Ordena do maior para o menor faturamento e recorta os 10 primeiros.
+        agrupado = agrupado.sort_values("faturamento", ascending=False)
+        df_top_10 = agrupado.head(10).copy()
+
+        # Participação percentual de cada produto no faturamento total do período.
+        total_periodo = float(agrupado["faturamento"].sum())
+        df_top_10["participacao_percentual"] = (
+            (df_top_10["faturamento"] / total_periodo * 100).round(1)
+            if total_periodo > 0
+            else 0.0
+        )
+
+        # Resumo executivo do giro de produtos no período de log.
+        resumo = {
+            "periodo_analise": (
+                f"{itens['data'].min():%Y-%m-%d} a {itens['data'].max():%Y-%m-%d}"
+            ),
+            "faturamento_periodo_reais": round(total_periodo, 2),
+            "produtos_distintos_vendidos": int(len(agrupado)),
+            "top_10_produtos": [
+                {
+                    "produto": str(produto),
+                    "faturamento_reais": round(float(linha["faturamento"]), 2),
+                    "volume": round(float(linha["quantidade"]), 2),
+                    "unidade": str(linha["unidade"]),
+                    "participacao_percentual": float(
+                        linha["participacao_percentual"]
+                    ),
+                }
+                for produto, linha in df_top_10.iterrows()
+            ],
+        }
+
+        logging.info(
+            "Estoque — Giro apurado: %d produtos distintos, R$ %.2f no período "
+            "%s. Líder: %s.",
+            resumo["produtos_distintos_vendidos"],
+            resumo["faturamento_periodo_reais"],
+            resumo["periodo_analise"],
+            resumo["top_10_produtos"][0]["produto"],
+        )
+        return resumo, df_top_10
+
+    # 'def gerar_grafico_top_10_produtos(...)' desenha o ranking de giro dos produtos[cite: 5].
+    def gerar_grafico_top_10_produtos(
+        self, df_top: pd.DataFrame, resumo: Dict[str, Any]
+    ) -> Path:
+        """Renderiza barras horizontais dos 10 produtos que mais faturaram.
+
+        Args:
+            df_top (pd.DataFrame): Top 10 com faturamento, quantidade, unidade
+            e participação percentual.
+            resumo (Dict[str, Any]): Resumo com período e totais consolidados.
+
+        Returns:
+            Path: Caminho do PNG 300 DPI gravado na pasta do departamento.
+        """
+        # Prepara a tabela em ordem crescente (maior faturamento fica no topo).
+        df_plot = df_top.reset_index().sort_values(by="faturamento", ascending=True)
+
+        # Constrói o caminho do arquivo dentro da subpasta 'estoque/'.
+        caminho_figura = self.pasta_saida / "top_10_produtos_giro.png"
+
+        # Remove a Curva ABC antiga quando ela existir: a visão de produto passa
+        # a ser a principal e uma figura obsoleta confundiria o leitor.
+        figura_abc_antiga = self.pasta_saida / "curva_abc_valor_imobilizado.png"
+        if figura_abc_antiga.exists():
+            figura_abc_antiga.unlink()
+            logging.info(
+                "Estoque — Figura obsoleta da Curva ABC removida (%s).",
+                figura_abc_antiga.name,
+            )
+
+        # Moldura de 10 por 6 polegadas para nomes de produto extensos.
+        figura, eixo = plt.subplots(figsize=(10, 6))
+
+        # Posições inteiras: item 0 na base, maior faturamento no topo.
+        posicoes = list(range(len(df_plot)))
+
+        # Barras do faturamento por produto na paleta corporativa padrão.
+        eixo.barh(
+            posicoes,
+            df_plot["faturamento"],
+            color=sns.color_palette("mako", n_colors=len(df_plot)),
+        )
+
+        # Rótulos dos produtos no eixo Y (nomes reais lançados no PDV).
+        eixo.set_yticks(posicoes)
+        eixo.set_yticklabels(df_plot["produto"], fontsize=9)
+
+        # Folga à direita para o rótulo composto (valor, volume e participação).
+        maior_faturamento = (
+            float(df_plot["faturamento"].max()) if len(df_plot) else 1.0
+        )
+        eixo.set_xlim(0, maior_faturamento * 1.75)
+
+        # Rótulo único por linha: faturamento · volume · participação percentual.
+        for posicao, (_, linha) in enumerate(df_plot.iterrows()):
+            faturamento = (
+                f"{linha['faturamento']:,.2f}"
+                .replace(",", "X").replace(".", ",").replace("X", ".")
+            )
+            volume = (
+                f"{linha['quantidade']:,.1f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            )
+            rotulo = (
+                f"  R\\$ {faturamento}  ·  {volume} {linha['unidade']}"
+                f"  ·  {linha['participacao_percentual']:.1f}%"
+            )
+            eixo.text(
+                linha["faturamento"],
+                posicao,
+                rotulo,
+                ha="left",
+                va="center",
+                fontsize=8.5,
+                fontweight="bold",
+            )
+
+        # Título com período e consolidação do faturamento analisado.
         eixo.set_title(
-            "Curva ABC de Estoque por Valor Financeiro Imobilizado (R$)",
-            fontsize=13,
+            "Top 10 Produtos por Faturamento — Giro Real do PDV\n"
+            f"Período {resumo['periodo_analise']}  ·  "
+            f"Faturamento total: R\\$ "
+            + (
+                f"{resumo['faturamento_periodo_reais']:,.2f}"
+                .replace(",", "X").replace(".", ",").replace("X", ".")
+            ),
+            fontsize=12,
             pad=12,
         )
 
-        # 'eixo.set_xlabel' escreve o rótulo do eixo horizontal X.
-        eixo.set_xlabel("Produto Cadastrado (SKU)", fontsize=10)
+        # Rótulos executivos dos eixos.
+        eixo.set_xlabel(
+            "Faturamento do Período (R$) — rótulo: volume e participação %",
+            fontsize=10,
+        )
+        eixo.set_ylabel("Produto (nome real do PDV)", fontsize=10)
 
-        # 'eixo.set_ylabel' escreve o rótulo do eixo vertical Y em moeda corrente (R$).
-        eixo.set_ylabel("Capital Imobilizado (R$)", fontsize=10)
-
-        # 'plt.xticks(rotation=45, ha="right")' inclina os nomes dos produtos em 45
-        # graus alinhados à direita.
-        # Esse comando impede a sobreposição de textos longos no rodapé da visualização.
-        plt.xticks(rotation=45, ha="right")
-
-        # 'plt.tight_layout()' ajusta dinamicamente as margens da figura para que
-        # nenhuma legenda seja cortada.
+        # Ajuste dinâmico de margens e gravação em alta resolução (300 DPI).
         plt.tight_layout()
-
-        # 'figura.savefig' grava fisicamente o arquivo de imagem no disco em resolução
-        # industrial de 300 DPI.
         figura.savefig(caminho_figura, dpi=300)
 
-        # 'plt.close(figura)' limpa e destrói o objeto gráfico da memória RAM para
-        # prevenir vazamentos de memória (Memory Leak).
+        # Liberação imediata do buffer gráfico na memória RAM.
         plt.close(figura)
 
-        # 'logging.info' confirma no terminal que o gráfico foi salvo com sucesso.
         logging.info(
-            "Estoque — Gráfico da Curva ABC exportado para: %s", caminho_figura.name
+            "Estoque — Gráfico Top 10 de produtos (giro) salvo em: %s",
+            caminho_figura.name,
         )
-
-        # 'return' devolve o caminho do arquivo físico gerado.
         return caminho_figura
 
-    # 'def' implementa a assinatura obrigatória herdada da classe base abstrata
-    # 'BaseDepartamento'.
-    # Este método orquestra a execução sequencial de todos os indicadores do
-    # departamento de estoque.
-    def executar_diagnostico_completo(self) -> dict[str, Any]:
-        """Coordena a classificação ABC, cálculo de cobertura e gráficos de estoque.
+    # 'def executar_diagnostico_completo(...)' honra a obrigação arquitetural exigida pela BaseDepartamento[cite: 5].
+    def executar_diagnostico_completo(self) -> Dict[str, Any]:
+        """Coordena em sequência a classificação ABC, o cálculo de dias de autonomia e as plotagens visuais[cite: 5].
 
         Returns:
-            Dict[str, Any]: Laudo executivo do departamento de estoque.
+            Dict[str, Any]: Prontuário executivo da gestão de almoxarifado contendo as métricas de capital e caminho da imagem[cite: 5].
         """
-        # Emite log anunciando o início oficial da auditoria de estoque da Fase 2.4.
+        # Emite log formal informando ao orquestrador geral o engajamento operacional do analista de suprimentos[cite: 5].
         logging.info("=== INICIANDO PERÍCIA DO DEPARTAMENTO DE ESTOQUE (FASE 2.4) ===")
 
-        # Carrega a base de dados de estoque na memória RAM.
+        # 1. Carrega as posições financeiras e físicas de estoque, delegando a leitura ao Adaptador Universal de ERPs[cite: 5].
         df_bruto = self.carregar_dados_estoque()
 
-        # Executa o cálculo de dias de cobertura e autonomia de matérias-primas.
+        # 2. Executa a camada matemática tabular para projetar a autonomia operacional (dias de cobertura)[cite: 5].
         df_cobertura = self.calcular_dias_cobertura(df_bruto)
 
-        # Aplica a rotulagem matemática da Curva ABC com base no capital imobilizado.
+        # 3. Executa a camada estatística para estratificação de retenção de caixa (Curva ABC Financeira)[cite: 5].
         df_abc = self.calcular_curva_abc(df_cobertura)
 
-        # Renderiza e salva o gráfico da Curva ABC no disco.
+        # 4. Executa a camada visual renderizando a Curva ABC colorida e persistindo no disco[cite: 5].
         caminho_grafico = self.gerar_grafico_curva_abc(df_abc)
 
-        # 'float(df_abc["valor_imobilizado"].sum())' soma todo o dinheiro preso em
-        # estoque na PME.
-        # 'round(..., 2)' arredonda o valor financeiro para centavos.
+        # 'df_abc["valor_imobilizado"].sum()' soma a montanha total de dinheiro alocada no estoque da PME[cite: 5].
+        # 'round(..., 2)' formata em precisão de duas casas monetárias padrão (R$)[cite: 5].
         total_capital = round(float(df_abc["valor_imobilizado"].sum()), 2)
 
-        # 'int(len(df_abc))' calcula a contagem total inteira de SKUs monitorados.
+        # 'len(df_abc)' apura a cardinalidade de SKUs (Stock Keeping Units) mantidos sob a gestão do armazém[cite: 5].
         total_skus = int(len(df_abc))
 
-        # 'float(df_abc["dias_cobertura"].mean())' calcula a média geral de dias de
-        # autonomia da empresa.
-        # 'round(..., 1)' arredonda a média com uma casa decimal.
+        # 'df_abc["dias_cobertura"].mean()' traça a médica aritmética simples da autonomia geral de produtos da empresa[cite: 5].
         media_cobertura = round(float(df_abc["dias_cobertura"].mean()), 1)
 
-        # 'laudo_estoque' é o dicionário estruturado com as métricas vitais para a
-        # tomada de decisão da diretoria.
+        # Dicionário serializável em JSON reunindo todos os indicadores estratégicos de saúde logística da companhia[cite: 5].
         laudo_estoque = {
             "capital_total_imobilizado_reais": total_capital,
             "total_skus_cadastrados": total_skus,
@@ -455,9 +472,35 @@ class AnalisadorEstoque(BaseDepartamento):
             "grafico_curva_abc": str(caminho_grafico),
         }
 
-        # Emite log marcando o término bem-sucedido da perícia de estoque.
+        # 5. VISÃO PRINCIPAL: análise de produtos (giro real do PDV). Quando o
+        # dataset possui log de caixa, ela SUBSTITUI a Curva ABC como gráfico
+        # principal do departamento; sem log, a ABC permanece como plano B.
+        # Bloco isolado em try/except para uma falha secundária não derrubar a
+        # Fase 02 inteira.
+        try:
+            itens_pdv = self.carregar_itens_pdv()
+            if not itens_pdv.empty:
+                resumo_produtos, df_top_produtos = self.calcular_top_10_produtos(
+                    itens_pdv
+                )
+                if not df_top_produtos.empty:
+                    caminho_produtos = self.gerar_grafico_top_10_produtos(
+                        df_top_produtos, resumo_produtos
+                    )
+                    # A figura da Curva ABC deixa de ser a principal do laudo.
+                    laudo_estoque.pop("grafico_curva_abc", None)
+                    laudo_estoque["top_10_produtos"] = resumo_produtos
+                    laudo_estoque["grafico_top_10_produtos"] = str(caminho_produtos)
+        except Exception:
+            # Auditoria técnica completa no console sem interromper a Fase 02.
+            logging.warning(
+                "Estoque — Falha ao montar a análise de produtos do PDV "
+                "(mantida a Curva ABC como plano B).",
+                exc_info=True,
+            )
+
+        # Emite sinalização no console confirmando o sucesso de todas as etapas estatísticas e gráficas[cite: 5].
         logging.info("=== DEPARTAMENTO DE ESTOQUE CONCLUÍDO COM SUCESSO ===")
 
-        # 'return' devolve o laudo consolidado de estoque para o orquestrador geral do
-        # projeto.
+        # Retorna o laudo compilado para integração no prontuário 360 Graus do Orquestrador Raio-X[cite: 5].
         return laudo_estoque

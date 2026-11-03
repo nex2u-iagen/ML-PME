@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reversa - projeto_ml Visual Documentation</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #e74c3c;
+            --success: #27ae60;
+            --background: #f8f9fa;
+            --text: #2c3e50;
+            --muted: #7f8c8d;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 20px 0;
+            margin: -20px -20px 20px;
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        
+        .nav {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+        
+        .nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 15px;
+            font-size: 14px;
+        }
+        
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+        }
+        
+        h2 {
+            color: var(--primary);
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        h3 {
+            color: #34495e;
+            margin-top: 0;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 20px;
+            transition: transform 0.2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .card h4 {
+            margin-top: 0;
+            color: var(--primary);
+        }
+        
+        .card p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .tag {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 5px;
+            margin-top: 5px;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-size: 12px;
+            margin-top: 40px;
+        }
+        
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            h1 {
+                font-size: 20px;
+            }
+            .nav {
+                flex-direction: column;
+                align-items: flex-end;
+            }
+            .nav a {
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">REV</div>
+            <h1>Documentação Visual - projeto_ml</h1>
+            <div class="nav">
+                <a href="#fases">Fases CRISP-DM</a>
+                <a href="#specs">Especificações</a>
+                <a href="#frontend">Frontend</a>
+                <a href="#download">Download</a>
+            </div>
+        </header>
+        
+        <section id="fases" class="section">
+            <h2>Ciclo CRISP-DM</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>Fase 01: Compreensão do Negócio</h3>
+                    <p>Extração de requisitos e entendimento do domínio</p>
+                </div>
+                <div class="card">
+                    <h3>Fase 02: Compreensão dos Dados</h3>
+                    <p>Análise exploratória e raio-x empresarial</p>
+                </div>
+                <div class="card">
+                    <h3>Fase 03: Preparação dos Dados</h3>
+                    <p>Engenharia de features, ABT, dados para BI e ML</p>
+                </div>
+                <div class="card">
+                    <h3>Fase 04: Modelagem</h3>
+                    <p>Fabricação de modelos, comparação e otimização</p>
+                </div>
+                <div class="card">
+                    <h3>Fase 05: Avaliação</h3>
+                    <p>Pódio Top 3, XAI/SHAP, alinhamento de custos, governança</p>
+                </div>
+                <div class="card">
+                    <h3>Fase 06: Implantação</h3>
+                    <p>Persistência, segurança JWT, contratos, motor de inferência</p>
+                </div>
+            </div>
+        </section>
+        
+        <section id="specs" class="section">
+            <h2>Especificações Geradas (Fase 06)</h2>
+            <div class="grid">
+                <div class="card">
+                    <h4>Pilar 01: Persistência de Integridade</h4>
+                    <p>Validador SHA-256, Empacotador Pipeline, Metadados de Modelo</p>
+                    <p class="tag">45 files</p>
+                </div>
+                <div class="card">
+                    <h4>Pilar 02: Segurança e Autenticação</h4>
+                    <p>Gerenciador JWT, Guardião de Autorização Bearer</p>
+                    <p class="tag">10 files</p>
+                </div>
+                <div class="card">
+                    <h4>Pilar 03: Contratos de Dados</h4>
+                    <p>Esquemas de entrada (crédito e clínico) e resposta de predição</p>
+                    <p class="tag">15 files</p>
+                </div>
+                <div class="card">
+                    <h4>Pilar 04: Motor de Inferência</h4>
+                    <p>Predição vetorizada, carregamento Singleton, API FastAPI</p>
+                    <p class="tag">15 files</p>
+                </div>
+            </div>
+        </section>
+        
+        <section id="frontend" class="section">
+            <h2>Frontend Operacional (Streamlit)</h2>
+            <div class="card">
+                <h4>Interface Web</h4>
+                <p>Permite operar e auditar cada etapa do CRISP-DM</p>
+                <ul>
+                    <li>Autenticação JWT via API</li>
+                    <li>Execução de fases 01-05 via subprocess</li>
+                    <li>Inferência individual via API FastAPI (Fase 06)</li>
+                    <li>Validação SHA-256 de artefatos</li>
+                    <li>Dashboard de saúde do modelo</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h4>Arquitetura Híbrida</h4>
+                <p>subprocess (Fases 01-05) + FastAPI (Fase 06)</p>
+                <p>Execução local via <code>streamlit run app_streamlit.py</code></p>
+            </div>
+        </section>
+        
+        <section id="download" class="section">
+            <h2>Download e Abertura</h2>
+            <p>A documentação está disponível em <code>_reversa_docs/index.html</code></p>
+            <p>Para abrir:</p>
+            <ul>
+                <li>Duplo clique no arquivo (funciona offline)</li>
+                <li>Ou execute: <code>python -m http.server 8080</code> na pasta <code>_reversa_docs/</code> e acesse <code>http://localhost:8080</code></li>
+            </ul>
+            <p>HTMLs auxiliares estão em <code>_reversa_docs/</code></p>
+        </section>
+    </div>
+    
+    <div class="footer">
+        <p>Reversa - Engenharia Reversa de Modelos de ML</p>
+        <p>Projeto: projeto_ml | Gerado: {{data_atual}} | Stack: Streamlit + HTML puro</p>
+    </div>
+    
+    <script>
+        // Atualizar data automaticamente
+        document.addEventListener('DOMContentLoaded', function() {
+            const dataEl = document.querySelector('.footer p:last-child');
+            if (dataEl) {
+                const data = new Date();
+                dataEl.textContent = `Gerado: ${data.toLocaleDateString('pt-BR')} ${data.toLocaleTimeString('pt-BR')}`;
+            }
+        });
+    </script>
+</body>
+</html>

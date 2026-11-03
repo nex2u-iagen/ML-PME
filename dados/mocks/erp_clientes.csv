@@ -1,0 +1,9 @@
+id_cliente,nome_fantasia,segmento,limite_credito,dias_prazo_pagamento
+101,Padaria Estrela,Alimentação,15000.0,30
+102,Mercado Bom Preço,Varejo,50000.0,45
+103,Auto Peças Silva,Automotivo,30000.0,28
+104,Restaurante Sabor,Alimentação,12000.0,15
+105,Farmácia Central,Saúde,45000.0,60
+106,Oficina São Jorge,Automotivo,20000.0,30
+107,Lanchonete União,Alimentação,8000.0,14
+108,Materiais Construção Real,Construção,60000.0,45

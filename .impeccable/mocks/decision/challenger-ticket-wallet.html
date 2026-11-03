@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>CRISP-DM Operacional — Carteira de Cupons</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Narrow:wght@500;600;700&family=Azeret+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--paper:#f7f7f4;--sheet:#fff;--ink:#14171a;--ink2:#5f676c;--rule:#c9ccc8;--rule2:#e6e8e4;
+    --navy:#16243d;--red:#b02a20;--carbon:#5b3e8e;--green:#1f6b4f;
+    --grot:"Archivo",system-ui,sans-serif;--narrow:"Archivo Narrow","Arial Narrow",sans-serif;--mono:"Azeret Mono",ui-monospace,monospace}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{width:1440px;height:900px;overflow:hidden;background:var(--paper);color:var(--ink);font-family:var(--grot);font-size:13px;line-height:1.45}
+  .top{height:66px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 26px}
+  .top b{font-family:var(--narrow);font-size:19px;font-weight:700;letter-spacing:.13em;text-transform:uppercase}
+  .top span{font-family:var(--mono);font-size:10.5px;color:#9fb0c6}
+  .wallet{padding:24px 34px;display:grid;grid-template-columns:1fr 1fr;gap:22px;height:834px}
+  .coupon{background:var(--sheet);border:1px solid var(--ink);position:relative;box-shadow:3px 3px 0 rgba(20,23,26,.1)}
+  .coupon .tear{position:absolute;left:0;right:0;bottom:-11px;height:11px;background:repeating-linear-gradient(90deg,var(--rule) 0 7px,transparent 7px 15px)}
+  .ch{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--ink);padding:11px 16px}
+  .ch h4{font-family:var(--narrow);font-size:15px;font-weight:700;letter-spacing:.13em;text-transform:uppercase}
+  .ch .leg{font-family:var(--mono);font-size:10px;color:var(--ink2)}
+  .fields{display:grid;grid-template-columns:1fr 1fr;gap:0 18px;padding:14px 16px}
+  .f{border-bottom:1px solid var(--rule2);padding:8px 0}
+  .f u{display:block;font-family:var(--narrow);font-size:9.5px;letter-spacing:.17em;text-transform:uppercase;color:var(--ink2);text-decoration:none}
+  .f s{display:block;font-family:var(--mono);font-size:14px;text-decoration:none;margin-top:3px;font-variant-numeric:tabular-nums}
+  .f s.purple{color:var(--carbon)}
+  .coupon .foot{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;border-top:1px dashed var(--rule);margin-top:4px}
+  .stamp{border:2px solid var(--red);color:var(--red);font-family:var(--narrow);font-size:11px;font-weight:700;letter-spacing:.17em;padding:4px 10px;transform:rotate(-3deg)}
+  .stamp.ok{border-color:var(--green);color:var(--green)}
+  .stubrow{display:grid;grid-template-columns:1fr 1fr;gap:22px;padding:0 34px}
+  .stub{background:#f1f0f6;border:1px dashed var(--carbon);padding:10px 14px;font-family:var(--mono);font-size:10px;color:var(--carbon);display:flex;justify-content:space-between}
+  .remain{position:absolute;right:34px;top:78px;font-family:var(--narrow);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink2);border:1px solid var(--rule);padding:6px 10px;background:var(--sheet)}
+</style>
+</head>
+<body>
+<div class="top"><b>CRISP-DM Operacional</b><span>carteira de analysis · mercado_vencedor · remaining 2 legs</span></div>
+<div class="remain">Carteira · 4 pernas</div>
+<div class="wallet">
+  <div class="coupon">
+    <div class="ch"><h4>Base</h4><span class="leg">PERNA 01</span></div>
+    <div class="fields">
+      <div class="f"><u>Tabelas</u><s>150</s></div>
+      <div class="f"><u>NFEs</u><s>114.975</s></div>
+      <div class="f"><u>CSV com dados</u><s>87</s></div>
+      <div class="f"><u>Tabelas vazias</u><s>2</s></div>
+    </div>
+    <div class="foot"><span class="stamp ok">VALIDADO</span><span style="font-family:var(--mono);font-size:10px;color:var(--ink2)">30/10 14:20 · 12,4 s</span></div>
+    <div class="tear"></div>
+  </div>
+  <div class="coupon">
+    <div class="ch"><h4>Pergunta</h4><span class="leg">PERNA 02</span></div>
+    <div class="fields">
+      <div class="f"><u>Problema</u><s style="font-size:12px">previsao_dias_atraso</s></div>
+      <div class="f"><u>Tipo</u><s style="font-size:12px">regressao</s></div>
+      <div class="f"><u>Grão</u><s>cliente · mês</s></div>
+      <div class="f"><u>Métrica</u><s>R²</s></div>
+    </div>
+    <div class="foot"><span class="stamp ok">VALIDADO</span><span class="s purple" style="font-family:var(--mono);font-size:11px;color:var(--carbon)">assinado 30/10 14:21</span></div>
+    <div class="tear"></div>
+  </div>
+</div>
+<div class="stubrow" style="margin-top:-8px">
+  <div class="stub"><span>CANHOTO · BASE</span><span>J8F2-91C0</span></div>
+  <div class="stub"><span>CANHOTO · PERGUNTA</span><span>J8F2-91C1</span></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,167 @@
+{
+  "generated_at": "2026-10-28T21:05:33.404955+00:00",
+  "project_root": "/home/eliezer/Documentos/Projetos/modelos-ml/projeto_ml",
+  "languages": [
+    {
+      "name": "Python",
+      "extensions": [
+        ".py"
+      ],
+      "file_count": 197
+    }
+  ],
+  "primary_language": "Python",
+  "frameworks": [
+    {
+      "name": "FastAPI",
+      "version": ">=0.162.0",
+      "source": "pyproject.toml"
+    },
+    {
+      "name": "scikit-learn",
+      "version": ">=1.4.0",
+      "source": "pyproject.toml"
+    },
+    {
+      "name": "xgboost",
+      "version": ">=3.2.0",
+      "source": "pyproject.toml"
+    },
+    {
+      "name": "pandas",
+      "version": ">=2.2.0",
+      "source": "pyproject.toml"
+    },
+    {
+      "name": "duckdb",
+      "version": ">=2.0.0",
+      "source": "pyproject.toml"
+    },
+    {
+      "name": "SQLAlchemy",
+      "version": ">=2.0.0",
+      "source": "pyproject.toml"
+    },
+    {
+      "name": "SHAP",
+      "version": ">=0.50.0",
+      "source": "pyproject.toml"
+    },
+    {
+      "name": "statsmodels",
+      "version": ">=0.14.0",
+      "source": "pyproject.toml"
+    },
+    {
+      "name": "autogluon-tabular",
+      "version": ">=1.1.0",
+      "source": "pyproject.toml"
+    },
+    {
+      "name": "uv (gerenciador de pacotes)",
+      "version": "lockfile uv.lock",
+      "source": "uv.lock"
+    }
+  ],
+  "package_manager": "uv",
+  "entry_points": [
+    {
+      "path": "src/etapas/fase_06_implantacao/pilar_04_motor_inferencia_api/aplicacao_fastapi.py",
+      "type": "api_entry"
+    },
+    {
+      "path": "scripts/bootstrap.py",
+      "type": "bootstrap"
+    },
+    {
+      "path": "scripts/executores_projeto/servir_api.py",
+      "type": "api_runner"
+    },
+    {
+      "path": "scripts/executores_projeto/torneio_classificacao.py",
+      "type": "classification_runner"
+    },
+    {
+      "path": "scripts/executores_projeto/torneio_regressao.py",
+      "type": "regression_runner"
+    },
+    {
+      "path": "scripts/executores_projeto/torneio_agrupamento.py",
+      "type": "clustering_runner"
+    }
+  ],
+  "config_files": [
+    "pyproject.toml",
+    "uv.lock",
+    "Dockerfile",
+    "docker-compose.yml",
+    ".dockerignore",
+    ".gitignore",
+    ".reversa/state.json",
+    ".reversa/config.toml"
+  ],
+  "ci_cd": [],
+  "docker": {
+    "dockerfile": "Dockerfile",
+    "compose": "docker-compose.yml"
+  },
+  "database_hints": [
+    {
+      "path": "dados/brutos/sql/banco_intermediario_erp.db",
+      "type": "sqlite_database"
+    },
+    {
+      "path": "dados/brutos/sql/MERCADO_VENCEDOR_20261005_120000.sql",
+      "type": "sql_dump"
+    },
+    {
+      "path": "src/nucleo/acesso_dados/conector_banco_relacional.py",
+      "type": "relational_connector"
+    },
+    {
+      "path": "src/nucleo/acesso_dados/conector_analitico_duckdb.py",
+      "type": "analytical_connector"
+    },
+    {
+      "path": "src/nucleo/acesso_dados/leitor_arquivos.py",
+      "type": "file_reader"
+    }
+  ],
+  "test_framework": "pytest",
+  "test_file_count": 16,
+  "modules": [
+    "d01_comercial",
+    "d02_financeiro",
+    "d03_compras",
+    "d04_estoque",
+    "d05_contabil",
+    "d06_fiscal",
+    "d07_producao",
+    "d08_logistica",
+    "d09_pos_venda",
+    "d10_recursos_humanos"
+  ],
+  "total_files": 197,
+  "organization_suggestion": {
+    "granularity": "module",
+    "rationale": "A estrutura está organizada por domínio de negócio: 10 departamentos (comercial, financeiro, compras, estoque, contabil, fiscal, producao, logistica, pos_venda, recursos_humanos) em src/etapas/fase_02_exploracao/departamentos/.",
+    "signals": [
+      {
+        "type": "top_level_domain_folders",
+        "evidence": [
+          "src/etapas/fase_02_exploracao/departamentos/d01_comercial/",
+          "src/etapas/fase_02_exploracao/departamentos/d02_financeiro/",
+          "src/etapas/fase_02_exploracao/departamentos/d03_compras/",
+          "src/etapas/fase_02_exploracao/departamentos/d04_estoque/",
+          "src/etapas/fase_02_exploracao/departamentos/d05_contabil/",
+          "src/etapas/fase_02_exploracao/departamentos/d06_fiscal/",
+          "src/etapas/fase_02_exploracao/departamentos/d07_producao/",
+          "src/etapas/fase_02_exploracao/departamentos/d08_logistica/",
+          "src/etapas/fase_02_exploracao/departamentos/d09_pos_venda/",
+          "src/etapas/fase_02_exploracao/departamentos/d10_recursos_humanos/"
+        ]
+      }
+    ],
+    "features": []
+  }
+}

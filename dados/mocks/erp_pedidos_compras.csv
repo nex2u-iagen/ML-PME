@@ -1,0 +1,7 @@
+id_pedido_compra,fornecedor,categoria_insumo,valor_compra,prazo_pagamento_dias
+501,Madeireira Pinhal,Matéria-Prima,32000.0,45
+502,Aços Santa Cruz,Ferragens,14500.0,30
+503,Química Global,Vernizes,8200.0,28
+504,Madeireira Pinhal,Matéria-Prima,28000.0,60
+505,Embalagens Brasil,Embalagem,4300.0,15
+506,Aços Santa Cruz,Ferragens,19000.0,30

@@ -1,0 +1,1466 @@
+{
+  "generated_at": "2026-10-28T21:11:03.699168+00:00",
+  "modules": [
+    {
+      "name": "d01_comercial",
+      "path": "src/etapas/fase_02_exploracao/departamentos/d01_comercial.py",
+      "purpose": "Diagnóstico de vendas reais com recorte de 12 meses e Pareto de Categorias de Varejo.",
+      "primary_files": [
+        "src/etapas/fase_02_exploracao/departamentos/d01_comercial.py"
+      ],
+      "class": "AnalisadorComercial",
+      "functions": [
+        {
+          "name": "__init__",
+          "file": "d01_comercial.py:53",
+          "params": [
+            "self, pasta_dados_brutos: Path, pasta_relatorios: Path"
+          ],
+          "returns": "None",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "carregar_dados_vendas",
+          "file": "d01_comercial.py:74",
+          "params": [
+            "self"
+          ],
+          "returns": "pd.DataFrame",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "gerar_grafico_evolucao_12_meses",
+          "file": "d01_comercial.py:111",
+          "params": [
+            "self, dados: pd.DataFrame"
+          ],
+          "returns": "Path",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "gerar_grafico_pareto_categorias",
+          "file": "d01_comercial.py:194",
+          "params": [
+            "self, dados: pd.DataFrame"
+          ],
+          "returns": "Path",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "executar_diagnostico_completo",
+          "file": "d01_comercial.py:270",
+          "params": [
+            "self"
+          ],
+          "returns": "Dict[str, Any]",
+          "confidence": "confirmed"
+        }
+      ],
+      "entities": [
+        {
+          "name": "laudo_comercial",
+          "fields": [
+            {
+              "name": "faturamento_bruto_12_meses",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "total_pedidos_faturados_12m",
+              "type": "int",
+              "required": true
+            },
+            {
+              "name": "grafico_evolucao_12_meses",
+              "type": "str",
+              "required": true
+            },
+            {
+              "name": "grafico_pareto_categorias",
+              "type": "str",
+              "required": true
+            }
+          ]
+        }
+      ],
+      "business_rules": [
+        {
+          "description": "Validação defensiva: interrompe se df_vendas for None ou vazio",
+          "location": "d01_comercial.py:85",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Agrupa vendas por ano_mes e soma valor_total para série temporal",
+          "location": "d01_comercial.py:120",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Agrupa vendas por categoria_departamento e soma valor_total para Pareto",
+          "location": "d01_comercial.py:201",
+          "confidence": "confirmed"
+        }
+      ],
+      "dependencies": [
+        "adaptador_universal_erp",
+        "matplotlib",
+        "seaborn",
+        "pandas"
+      ],
+      "algorithms": [
+        {
+          "name": "Série temporal mensal",
+          "description": "groupby(ano_mes)['valor_total'].sum() + ordenação cronológica",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "Pareto por categoria",
+          "description": "groupby(categoria_departamento)['valor_total'].sum() + ordenação decrescente",
+          "confidence": "confirmed"
+        }
+      ],
+      "complexity": "medium"
+    },
+    {
+      "name": "d02_financeiro",
+      "path": "src/etapas/fase_02_exploracao/departamentos/d02_financeiro.py",
+      "purpose": "Auditoria de tesouraria, cálculo de taxa de inadimplência e distribuição por status de cobrança (Aging).",
+      "primary_files": [
+        "src/etapas/fase_02_exploracao/departamentos/d02_financeiro.py"
+      ],
+      "class": "AnalisadorFinanceiro",
+      "functions": [
+        {
+          "name": "__init__",
+          "file": "d02_financeiro.py:35",
+          "params": [
+            "self, pasta_dados_brutos: Path, pasta_relatorios: Path"
+          ],
+          "returns": "None",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "carregar_dados_financeiros",
+          "file": "d02_financeiro.py:50",
+          "params": [
+            "self"
+          ],
+          "returns": "pd.DataFrame",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "calcular_taxa_inadimplencia",
+          "file": "d02_financeiro.py:74",
+          "params": [
+            "self, dados: pd.DataFrame"
+          ],
+          "returns": "Dict[str, Any]",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "gerar_grafico_distribuicao_status",
+          "file": "d02_financeiro.py:116",
+          "params": [
+            "self, dados: pd.DataFrame"
+          ],
+          "returns": "Path",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "executar_diagnostico_completo",
+          "file": "d02_financeiro.py:172",
+          "params": [
+            "self"
+          ],
+          "returns": "Dict[str, Any]",
+          "confidence": "confirmed"
+        }
+      ],
+      "entities": [
+        {
+          "name": "laudo_inadimplencia",
+          "fields": [
+            {
+              "name": "faturamento_total_reais",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "valor_em_risco_reais",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "taxa_inadimplencia_percentual",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "total_titulos_analisados",
+              "type": "int",
+              "required": true
+            },
+            {
+              "name": "total_titulos_inadimplentes",
+              "type": "int",
+              "required": true
+            }
+          ]
+        },
+        {
+          "name": "laudo_financeiro",
+          "fields": [
+            {
+              "name": "analise_inadimplencia",
+              "type": "dict",
+              "required": true
+            },
+            {
+              "name": "grafico_status_cobranca",
+              "type": "str",
+              "required": true
+            }
+          ]
+        }
+      ],
+      "business_rules": [
+        {
+          "description": "taxa_inadimplencia = (valor_em_risco / faturamento_total) * 100",
+          "location": "d02_financeiro.py:94",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Filtro: status_pagamento in ['Inadimplente', 'Atrasado']",
+          "location": "d02_financeiro.py:87",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Operador ternário previne divisão por zero",
+          "location": "d02_financeiro.py:94",
+          "confidence": "confirmed"
+        }
+      ],
+      "dependencies": [
+        "adaptador_universal_erp",
+        "matplotlib",
+        "seaborn",
+        "pandas"
+      ],
+      "algorithms": [
+        {
+          "name": "Cálculo de inadimplência",
+          "description": "Soma de títulos em risco dividida pelo faturamento total",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "Distribuição por status (Aging)",
+          "description": "groupby(status_pagamento)['valor_total'].sum()",
+          "confidence": "confirmed"
+        }
+      ],
+      "complexity": "medium"
+    },
+    {
+      "name": "d03_compras",
+      "path": "src/etapas/fase_02_exploracao/departamentos/d03_compras.py",
+      "purpose": "Avaliação de suprimentos, cálculo do Prazo Médio de Pagamento (PMP/DPO) e concentração por fornecedor.",
+      "primary_files": [
+        "src/etapas/fase_02_exploracao/departamentos/d03_compras.py"
+      ],
+      "class": "AnalisadorCompras",
+      "functions": [
+        {
+          "name": "__init__",
+          "file": "d03_compras.py:35",
+          "params": [
+            "self, pasta_dados_brutos: Path, pasta_relatorios: Path"
+          ],
+          "returns": "None",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "carregar_dados_compras",
+          "file": "d03_compras.py:50",
+          "params": [
+            "self"
+          ],
+          "returns": "pd.DataFrame",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "calcular_prazo_medio_pagamento",
+          "file": "d03_compras.py:99",
+          "params": [
+            "self, dados: pd.DataFrame"
+          ],
+          "returns": "float",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "gerar_grafico_concentracao_fornecedores",
+          "file": "d03_compras.py:127",
+          "params": [
+            "self, dados: pd.DataFrame"
+          ],
+          "returns": "Path",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "executar_diagnostico_completo",
+          "file": "d03_compras.py:184",
+          "params": [
+            "self"
+          ],
+          "returns": "Dict[str, Any]",
+          "confidence": "confirmed"
+        }
+      ],
+      "entities": [
+        {
+          "name": "df_compras_canonico",
+          "fields": [
+            {
+              "name": "fornecedor",
+              "type": "str",
+              "required": true
+            },
+            {
+              "name": "valor_compra",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "prazo_pagamento_dias",
+              "type": "float",
+              "required": true
+            }
+          ]
+        },
+        {
+          "name": "laudo_compras",
+          "fields": [
+            {
+              "name": "volume_total_comprado_reais",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "prazo_medio_pagamento_dias",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "total_fornecedores_ativos",
+              "type": "int",
+              "required": true
+            },
+            {
+              "name": "grafico_concentracao_fornecedores",
+              "type": "str",
+              "required": true
+            }
+          ]
+        }
+      ],
+      "business_rules": [
+        {
+          "description": "PMP = soma(valor_compra * prazo_pagamento_dias) / soma(valor_compra)",
+          "location": "d03_compras.py:118",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Filtra top 10 fornecedores por valor para nitidez gráfica",
+          "location": "d03_compras.py:143",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Validação: não gera dados falsos (mocks) se tabela não encontrada",
+          "location": "d03_compras.py:67",
+          "confidence": "confirmed"
+        }
+      ],
+      "dependencies": [
+        "adaptador_universal_erp",
+        "matplotlib",
+        "seaborn",
+        "pandas"
+      ],
+      "algorithms": [
+        {
+          "name": "PMP ponderado",
+          "description": "Média ponderada de prazo por valor financeiro da compra",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "Concentração de fornecedores",
+          "description": "groupby(fornecedor)['valor_compra'].sum() ordenado decrescente",
+          "confidence": "confirmed"
+        }
+      ],
+      "complexity": "medium"
+    },
+    {
+      "name": "d04_estoque",
+      "path": "src/etapas/fase_02_exploracao/departamentos/d04_estoque.py",
+      "purpose": "Avaliação de almoxarifado, capital imobilizado, dias de cobertura e classificação Curva ABC.",
+      "primary_files": [
+        "src/etapas/fase_02_exploracao/departamentos/d04_estoque.py"
+      ],
+      "class": "AnalisadorEstoque",
+      "functions": [
+        {
+          "name": "__init__",
+          "file": "d04_estoque.py:35",
+          "params": [
+            "self, pasta_dados_brutos: Path, pasta_relatorios: Path"
+          ],
+          "returns": "None",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "carregar_dados_estoque",
+          "file": "d04_estoque.py:50",
+          "params": [
+            "self"
+          ],
+          "returns": "pd.DataFrame",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "calcular_dias_cobertura",
+          "file": "d04_estoque.py:75",
+          "params": [
+            "self, dados: pd.DataFrame"
+          ],
+          "returns": "pd.DataFrame",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "calcular_curva_abc",
+          "file": "d04_estoque.py:102",
+          "params": [
+            "self, dados: pd.DataFrame"
+          ],
+          "returns": "pd.DataFrame",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "gerar_grafico_curva_abc",
+          "file": "d04_estoque.py:150",
+          "params": [
+            "self, dados: pd.DataFrame"
+          ],
+          "returns": "Path",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "executar_diagnostico_completo",
+          "file": "d04_estoque.py:212",
+          "params": [
+            "self"
+          ],
+          "returns": "Dict[str, Any]",
+          "confidence": "confirmed"
+        }
+      ],
+      "entities": [
+        {
+          "name": "df_cobertura",
+          "fields": [
+            {
+              "name": "dias_cobertura",
+              "type": "float",
+              "required": true
+            }
+          ]
+        },
+        {
+          "name": "df_abc",
+          "fields": [
+            {
+              "name": "valor_acumulado",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "percentual_acumulado",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "classe_abc",
+              "type": "str",
+              "required": true
+            }
+          ]
+        },
+        {
+          "name": "laudo_estoque",
+          "fields": [
+            {
+              "name": "capital_total_imobilizado_reais",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "total_skus_cadastrados",
+              "type": "int",
+              "required": true
+            },
+            {
+              "name": "media_dias_cobertura_geral",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "grafico_curva_abc",
+              "type": "str",
+              "required": true
+            }
+          ]
+        }
+      ],
+      "business_rules": [
+        {
+          "description": "dias_cobertura = quantidade_saldo / (consumo_mensal_medio / 30)",
+          "location": "d04_estoque.py:93",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Classe A: percentual <= 80% | Classe B: 80-95% | Classe C: > 95%",
+          "location": "d04_estoque.py:125-133",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Limita gráfico aos 25 produtos mais valiosos",
+          "location": "d04_estoque.py:160",
+          "confidence": "confirmed"
+        }
+      ],
+      "dependencies": [
+        "adaptador_universal_erp",
+        "matplotlib",
+        "seaborn",
+        "pandas"
+      ],
+      "algorithms": [
+        {
+          "name": "Dias de cobertura",
+          "description": "Saldo físico dividido pelo consumo médio diário",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "Curva ABC de Pareto",
+          "description": "Soma cumulativa de valor imobilizado com classificação A/B/C",
+          "confidence": "confirmed"
+        }
+      ],
+      "complexity": "high"
+    },
+    {
+      "name": "d05_contabil",
+      "path": "src/etapas/fase_02_exploracao/departamentos/d05_contabil.py",
+      "purpose": "Diagnóstico de CMV, índice de margem de contribuição (IMC) e Break-Even Point (Ponto de Equilíbrio).",
+      "primary_files": [
+        "src/etapas/fase_02_exploracao/departamentos/d05_contabil.py"
+      ],
+      "class": "AnalisadorContabil",
+      "functions": [
+        {
+          "name": "__init__",
+          "file": "d05_contabil.py:35",
+          "params": [
+            "self, pasta_dados_brutos: Path, pasta_relatorios: Path"
+          ],
+          "returns": "None",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "carregar_dados_contabeis",
+          "file": "d05_contabil.py:50",
+          "params": [
+            "self"
+          ],
+          "returns": "pd.DataFrame",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "calcular_margem_contribuicao",
+          "file": "d05_contabil.py:83",
+          "params": [
+            "self, dados: pd.DataFrame"
+          ],
+          "returns": "Dict[str, float]",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "calcular_ponto_equilibrio",
+          "file": "d05_contabil.py:123",
+          "params": [
+            "self, laudo_margem: Dict[str, float], custos_fixos_mensais: float = 25000.0"
+          ],
+          "returns": "Dict[str, float]",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "gerar_grafico_composicao_resultado",
+          "file": "d05_contabil.py:163",
+          "params": [
+            "self, laudo_margem: Dict[str, float]"
+          ],
+          "returns": "Path",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "executar_diagnostico_completo",
+          "file": "d05_contabil.py:229",
+          "params": [
+            "self"
+          ],
+          "returns": "Dict[str, Any]",
+          "confidence": "confirmed"
+        }
+      ],
+      "entities": [
+        {
+          "name": "laudo_margem",
+          "fields": [
+            {
+              "name": "receita_bruta_reais",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "custo_cmv_total_reais",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "despesas_variaveis_reais",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "margem_contribuicao_reais",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "indice_margem_percentual",
+              "type": "float",
+              "required": true
+            }
+          ]
+        },
+        {
+          "name": "laudo_equilibrio",
+          "fields": [
+            {
+              "name": "custos_fixos_reais",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "ponto_equilibrio_reais",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "margem_seguranca_reais",
+              "type": "float",
+              "required": true
+            }
+          ]
+        }
+      ],
+      "business_rules": [
+        {
+          "description": "custo_cmv = valor_total * 0.55 (taxa mercadológica média PME)",
+          "location": "d05_contabil.py:71",
+          "confidence": "inferred"
+        },
+        {
+          "description": "despesas_variaveis = valor_total * 0.12 (tarifas, comissões)",
+          "location": "d05_contabil.py:74",
+          "confidence": "inferred"
+        },
+        {
+          "description": "margem_contribuicao = receita_total - cmv_total - despesas_var_total",
+          "location": "d05_contabil.py:98",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "ponto_equilibrio = custos_fixos / indice_decimal da margem",
+          "location": "d05_contabil.py:141",
+          "confidence": "confirmed"
+        }
+      ],
+      "dependencies": [
+        "adaptador_universal_erp",
+        "matplotlib",
+        "seaborn",
+        "pandas"
+      ],
+      "algorithms": [
+        {
+          "name": "Margem de Contribuição",
+          "description": "Receita menos CMV e despesas variáveis, com índice percentual",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "Break-Even Point",
+          "description": "Custos fixos divididos pela margem de contribuição fracionária",
+          "confidence": "confirmed"
+        }
+      ],
+      "complexity": "high"
+    },
+    {
+      "name": "d06_fiscal",
+      "path": "src/etapas/fase_02_exploracao/departamentos/d06_fiscal.py",
+      "purpose": "Cálculo da Carga Tributária Efetiva, auditoria de ICMS/PIS/COFINS e concentração geográfica por UF.",
+      "primary_files": [
+        "src/etapas/fase_02_exploracao/departamentos/d06_fiscal.py"
+      ],
+      "class": "AnalisadorFiscal",
+      "functions": [
+        {
+          "name": "__init__",
+          "file": "d06_fiscal.py:33",
+          "params": [
+            "self, pasta_dados_brutos: Path, pasta_relatorios: Path"
+          ],
+          "returns": "None",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "carregar_dados_fiscais",
+          "file": "d06_fiscal.py:47",
+          "params": [
+            "self"
+          ],
+          "returns": "pd.DataFrame",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "calcular_carga_tributaria_efetiva",
+          "file": "d06_fiscal.py:80",
+          "params": [
+            "self, dados: pd.DataFrame"
+          ],
+          "returns": "Dict[str, float]",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "gerar_grafico_impostos_por_uf",
+          "file": "d06_fiscal.py:117",
+          "params": [
+            "self, dados: pd.DataFrame"
+          ],
+          "returns": "Path",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "executar_diagnostico_completo",
+          "file": "d06_fiscal.py:157",
+          "params": [
+            "self"
+          ],
+          "returns": "Dict[str, Any]",
+          "confidence": "confirmed"
+        }
+      ],
+      "entities": [
+        {
+          "name": "laudo_fiscal",
+          "fields": [
+            {
+              "name": "faturamento_bruto_reais",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "total_icms_reais",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "total_pis_reais",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "total_cofins_reais",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "total_impostos_reais",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "aliquota_efetiva_percentual",
+              "type": "float",
+              "required": true
+            }
+          ]
+        }
+      ],
+      "business_rules": [
+        {
+          "description": "valor_icms = valor_total * 0.18 (alíquota estimada)",
+          "location": "d06_fiscal.py:67",
+          "confidence": "inferred"
+        },
+        {
+          "description": "valor_pis = valor_total * 0.0165 (alíquota estimada)",
+          "location": "d06_fiscal.py:68",
+          "confidence": "inferred"
+        },
+        {
+          "description": "valor_cofins = valor_total * 0.076 (alíquota estimada)",
+          "location": "d06_fiscal.py:69",
+          "confidence": "inferred"
+        },
+        {
+          "description": "aliquota_efetiva = total_impostos / faturamento_total * 100",
+          "location": "d06_fiscal.py:99",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "UF simulada por paridade do id_pedido (SP=par, MG=impar)",
+          "location": "d06_fiscal.py:74",
+          "confidence": "inferred"
+        }
+      ],
+      "dependencies": [
+        "adaptador_universal_erp",
+        "matplotlib",
+        "seaborn",
+        "pandas"
+      ],
+      "algorithms": [
+        {
+          "name": "Carga Tributária Efetiva",
+          "description": "Soma de ICMS + PIS + COFINS dividida pelo faturamento bruto",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "Concentração por UF",
+          "description": "groupby(uf_destino)['total_impostos'].sum()",
+          "confidence": "confirmed"
+        }
+      ],
+      "complexity": "medium"
+    },
+    {
+      "name": "d07_producao",
+      "path": "src/etapas/fase_02_exploracao/departamentos/d07_producao.py",
+      "purpose": "Diagnóstico de OEE (Overall Equipment Effectiveness), taxa de refugo e indicadores de manufatura.",
+      "primary_files": [
+        "src/etapas/fase_02_exploracao/departamentos/d07_producao.py"
+      ],
+      "class": "AnalisadorProducao",
+      "functions": [
+        {
+          "name": "__init__",
+          "file": "d07_producao.py:27",
+          "params": [
+            "self, pasta_dados_brutos: Path, pasta_relatorios: Path"
+          ],
+          "returns": "None",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "carregar_dados_producao",
+          "file": "d07_producao.py:40",
+          "params": [
+            "self"
+          ],
+          "returns": "pd.DataFrame",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "calcular_taxa_refugo",
+          "file": "d07_producao.py:73",
+          "params": [
+            "self, dados: pd.DataFrame"
+          ],
+          "returns": "Dict[str, float]",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "calcular_oee_estimado",
+          "file": "d07_producao.py:108",
+          "params": [
+            "self, dados: pd.DataFrame"
+          ],
+          "returns": "Dict[str, float]",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "gerar_grafico_refugo_produtos",
+          "file": "d07_producao.py:154",
+          "params": [
+            "self, dados: pd.DataFrame"
+          ],
+          "returns": "Path",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "executar_diagnostico_completo",
+          "file": "d07_producao.py:202",
+          "params": [
+            "self"
+          ],
+          "returns": "Dict[str, Any]",
+          "confidence": "confirmed"
+        }
+      ],
+      "entities": [
+        {
+          "name": "laudo_refugo",
+          "fields": [
+            {
+              "name": "total_unidades_meta_pcp",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "total_unidades_processadas_fabrica",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "total_unidades_sucata_refugo",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "indice_scrap_rate_refugo_pct",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "aderencia_meta_industrial_pct",
+              "type": "float",
+              "required": true
+            }
+          ]
+        },
+        {
+          "name": "laudo_oee",
+          "fields": [
+            {
+              "name": "disponibilidade_industrial_pct",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "performance_ritmo_operacional_pct",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "qualidade_first_pass_yield_pct",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "oee_global_effectiveness_pct",
+              "type": "float",
+              "required": true
+            }
+          ]
+        }
+      ],
+      "business_rules": [
+        {
+          "description": "taxa_refugo = total_refugo / total_produzido * 100",
+          "location": "d07_producao.py:88",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "disponibilidade = (horas_disponiveis - horas_paradas) / horas_disponiveis",
+          "location": "d07_producao.py:123",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "OEE = disponibilidade * performance * qualidade / 10000",
+          "location": "d07_producao.py:136",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "quantidade_refugada = quantidade_produzida * 0.04 (4% fixo)",
+          "location": "d07_producao.py:63",
+          "confidence": "inferred"
+        }
+      ],
+      "dependencies": [
+        "adaptador_universal_erp",
+        "matplotlib",
+        "seaborn",
+        "pandas"
+      ],
+      "algorithms": [
+        {
+          "name": "OEE (Overall Equipment Effectiveness)",
+          "description": "Produto das três frações: Disponibilidade × Performance × Qualidade",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "Scrap Rate",
+          "description": "Unidades sucateadas divididas pelo total produzido",
+          "confidence": "confirmed"
+        }
+      ],
+      "complexity": "high"
+    },
+    {
+      "name": "d08_logistica",
+      "path": "src/etapas/fase_02_exploracao/departamentos/d08_logistica.py",
+      "purpose": "Avaliação de custos de frete (Freight-to-Sales), índice OTIF e tempo médio de trânsito por transportadora.",
+      "primary_files": [
+        "src/etapas/fase_02_exploracao/departamentos/d08_logistica.py"
+      ],
+      "class": "AnalisadorLogistica",
+      "functions": [
+        {
+          "name": "__init__",
+          "file": "d08_logistica.py:44",
+          "params": [
+            "self, pasta_dados_brutos: Path, pasta_relatorios: Path"
+          ],
+          "returns": "None",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "carregar_dados_logistica",
+          "file": "d08_logistica.py:61",
+          "params": [
+            "self"
+          ],
+          "returns": "pd.DataFrame",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "calcular_custo_frete_sobre_vendas",
+          "file": "d08_logistica.py:116",
+          "params": [
+            "self, dados: pd.DataFrame"
+          ],
+          "returns": "Dict[str, float]",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "calcular_indice_otif",
+          "file": "d08_logistica.py:155",
+          "params": [
+            "self, dados: pd.DataFrame"
+          ],
+          "returns": "Dict[str, float]",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "gerar_grafico_tempo_transito_transportadora",
+          "file": "d08_logistica.py:215",
+          "params": [
+            "self, dados: pd.DataFrame"
+          ],
+          "returns": "Path",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "executar_diagnostico_completo",
+          "file": "d08_logistica.py:276",
+          "params": [
+            "self"
+          ],
+          "returns": "Dict[str, Any]",
+          "confidence": "confirmed"
+        }
+      ],
+      "entities": [
+        {
+          "name": "laudo_frete",
+          "fields": [
+            {
+              "name": "total_mercadorias_reais",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "total_frete_pago_reais",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "percentual_frete_sobre_vendas",
+              "type": "float",
+              "required": true
+            }
+          ]
+        },
+        {
+          "name": "laudo_otif",
+          "fields": [
+            {
+              "name": "taxa_on_time_percentual",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "taxa_in_full_percentual",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "indice_otif_consolidado_percentual",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "total_despachos_auditados",
+              "type": "int",
+              "required": true
+            }
+          ]
+        }
+      ],
+      "business_rules": [
+        {
+          "description": "custo_frete = valor_mercadoria * 0.055 (estimativa de 5.5%)",
+          "location": "d08_logistica.py:88",
+          "confidence": "inferred"
+        },
+        {
+          "description": "OTIF = on_time == 1 AND in_full == 1",
+          "location": "d08_logistica.py:181",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Freight-to-Sales = total_frete / total_mercadorias * 100",
+          "location": "d08_logistica.py:135",
+          "confidence": "confirmed"
+        }
+      ],
+      "dependencies": [
+        "adaptador_universal_erp",
+        "matplotlib",
+        "seaborn",
+        "pandas"
+      ],
+      "algorithms": [
+        {
+          "name": "OTIF",
+          "description": "On-Time (pontualidade) AND In-Full (integridade da carga)",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "Freight-to-Sales",
+          "description": "Custo total de frete sobre valor da mercadoria",
+          "confidence": "confirmed"
+        }
+      ],
+      "complexity": "medium"
+    },
+    {
+      "name": "d09_pos_venda",
+      "path": "src/etapas/fase_02_exploracao/departamentos/d09_pos_venda.py",
+      "purpose": "Avaliação de atrito com cliente, MTTR, CSAT e motivos de reclamação/cancelamento/troca.",
+      "primary_files": [
+        "src/etapas/fase_02_exploracao/departamentos/d09_pos_venda.py"
+      ],
+      "class": "AnalisadorPosVenda",
+      "functions": [
+        {
+          "name": "__init__",
+          "file": "d09_pos_venda.py:35",
+          "params": [
+            "self, pasta_dados_brutos: Path, pasta_relatorios: Path"
+          ],
+          "returns": "None",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "carregar_dados_pos_venda",
+          "file": "d09_pos_venda.py:50",
+          "params": [
+            "self"
+          ],
+          "returns": "pd.DataFrame",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "calcular_metricas_atendimento",
+          "file": "d09_pos_venda.py:109",
+          "params": [
+            "self, dados: pd.DataFrame"
+          ],
+          "returns": "Dict[str, float]",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "gerar_grafico_motivos_chamados",
+          "file": "d09_pos_venda.py:160",
+          "params": [
+            "self, dados: pd.DataFrame"
+          ],
+          "returns": "Path",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "executar_diagnostico_completo",
+          "file": "d09_pos_venda.py:220",
+          "params": [
+            "self"
+          ],
+          "returns": "Dict[str, Any]",
+          "confidence": "confirmed"
+        }
+      ],
+      "entities": [
+        {
+          "name": "laudo_atendimento",
+          "fields": [
+            {
+              "name": "mttr_horas",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "taxa_resolucao_percentual",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "csat_medio_escala_5",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "total_chamados_auditados",
+              "type": "int",
+              "required": true
+            }
+          ]
+        }
+      ],
+      "business_rules": [
+        {
+          "description": "MTTR = média de tempo_resolucao_horas para chamados Resolvido",
+          "location": "d09_pos_venda.py:126",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "taxa_resolucao = total_resolvidos / total_chamados * 100",
+          "location": "d09_pos_venda.py:135",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "CSAT = média de nota_satisfacao_csat (escala 1-5)",
+          "location": "d09_pos_venda.py:138",
+          "confidence": "confirmed"
+        }
+      ],
+      "dependencies": [
+        "adaptador_universal_erp",
+        "matplotlib",
+        "seaborn",
+        "pandas"
+      ],
+      "algorithms": [
+        {
+          "name": "MTTR (Mean Time To Resolution)",
+          "description": "Média aritmética de horas de resolução de chamados encerrados",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "CSAT",
+          "description": "Média das notas de satisfação do cliente",
+          "confidence": "confirmed"
+        }
+      ],
+      "complexity": "medium"
+    },
+    {
+      "name": "d10_recursos_humanos",
+      "path": "src/etapas/fase_02_exploracao/departamentos/d10_recursos_humanos.py",
+      "purpose": "Diagnóstico de folha salarial, taxa de turnover e produtividade por colaborador ativo.",
+      "primary_files": [
+        "src/etapas/fase_02_exploracao/departamentos/d10_recursos_humanos.py"
+      ],
+      "class": "AnalisadorRecursosHumanos",
+      "functions": [
+        {
+          "name": "__init__",
+          "file": "d10_recursos_humanos.py:38",
+          "params": [
+            "self, pasta_dados_brutos: Path, pasta_relatorios: Path"
+          ],
+          "returns": "None",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "carregar_dados_rh",
+          "file": "d10_recursos_humanos.py:49",
+          "params": [
+            "self"
+          ],
+          "returns": "pd.DataFrame",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "calcular_indicadores_rh",
+          "file": "d10_recursos_humanos.py:101",
+          "params": [
+            "self, dados: pd.DataFrame"
+          ],
+          "returns": "Dict[str, float]",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "gerar_grafico_custo_folha_por_setor",
+          "file": "d10_recursos_humanos.py:150",
+          "params": [
+            "self, dados: pd.DataFrame"
+          ],
+          "returns": "Path",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "executar_diagnostico_completo",
+          "file": "d10_recursos_humanos.py:199",
+          "params": [
+            "self"
+          ],
+          "returns": "Dict[str, Any]",
+          "confidence": "confirmed"
+        }
+      ],
+      "entities": [
+        {
+          "name": "df_rh",
+          "fields": [
+            {
+              "name": "id_funcionario",
+              "type": "int",
+              "required": true
+            },
+            {
+              "name": "nome_colaborador",
+              "type": "str",
+              "required": true
+            },
+            {
+              "name": "setor",
+              "type": "str",
+              "required": true
+            },
+            {
+              "name": "salario_base",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "status_vinculo",
+              "type": "str",
+              "required": true
+            },
+            {
+              "name": "dias_falta",
+              "type": "int",
+              "required": true
+            },
+            {
+              "name": "encargos_sociais",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "custo_total_empresa",
+              "type": "float",
+              "required": true
+            }
+          ]
+        },
+        {
+          "name": "laudo_rh",
+          "fields": [
+            {
+              "name": "custo_folha_total_reais",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "percentual_folha_sobre_receita",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "taxa_turnover_percentual",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "produtividade_media_por_ativo",
+              "type": "float",
+              "required": true
+            },
+            {
+              "name": "total_colaboradores_ativos",
+              "type": "int",
+              "required": true
+            },
+            {
+              "name": "total_demissoes",
+              "type": "int",
+              "required": true
+            }
+          ]
+        }
+      ],
+      "business_rules": [
+        {
+          "description": "encargos_sociais = salario_base * 0.40 (40% trabalhista)",
+          "location": "d10_recursos_humanos.py:92",
+          "confidence": "inferred"
+        },
+        {
+          "description": "custo_total_empresa = salario_base + encargos_sociais",
+          "location": "d10_recursos_humanos.py:95",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "percentual_folha = custo_folha_total / faturamento_real * 100",
+          "location": "d10_recursos_humanos.py:113",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "taxa_turnover = total_demissoes / total_colaboradores * 100",
+          "location": "d10_recursos_humanos.py:125",
+          "confidence": "confirmed"
+        }
+      ],
+      "dependencies": [
+        "adaptador_universal_erp",
+        "matplotlib",
+        "seaborn",
+        "pandas"
+      ],
+      "algorithms": [
+        {
+          "name": "Custo da Folha",
+          "description": "Soma de salários base + encargos sociais (40%) por colaborador",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "Turnover",
+          "description": "Percentual de demissões sobre total de colaboradores",
+          "confidence": "confirmed"
+        }
+      ],
+      "complexity": "medium"
+    }
+  ]
+}

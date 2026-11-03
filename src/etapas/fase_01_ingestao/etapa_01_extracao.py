@@ -1,336 +1,239 @@
-"""Módulo de Orquestração da Ingestão de Dados (Fase 01).
+"""Módulo de Orquestração da Ingestão de Dados (Fase 01 - CRISP-DM).
 
-Responsável por orquestrar a carga de dados de ERPs de PMEs,
-convertendo dumps estruturais SQL para arquivos tabulares CSV
-e validando a integridade das entidades para as etapas seguintes.
+Responsável por orquestrar a carga de dados de ERPs de PMEs, convertendo dumps
+estruturais SQL de múltiplos dialetos para arquivos tabulares CSV organizados
+em subpastas isoladas com o nome do banco de dados, evitando contaminação.
 """
 
-# 'import' traz o módulo 'logging' da biblioteca padrão do Python para mensagens
-# profissionais no terminal.
-import logging
-
-# 'from' acessa a biblioteca nativa 'pathlib'; 'import' carrega 'Path' para manipular
-# pastas e caminhos de arquivos.
+# 'from pathlib import Path' disponibiliza a manipulação orientada a objetos de pastas no sistema operacional.
 from pathlib import Path
 
-# 'from' acessa o módulo 'typing' nativo do Python para documentar tipos de dados de
-# variáveis e parâmetros.
-# 'Dict' documenta dicionários de chave e valor; 'List' documenta listas ordenadas de
-# itens.
-# 'import' carrega a biblioteca externa 'pandas', especialista na manipulação de tabelas
-# bidimensionais em memória.
-# 'as' define o apelido universal 'pd', padrão absoluto adotado na Ciência de Dados.
+# 'from typing import Dict, List' documenta os tipos estáticos formais da biblioteca padrão[cite: 1].
+from typing import Dict, List
+
+# 'import logging' gerencia as mensagens de auditoria técnica no console corporativo[cite: 1].
+import logging
+
+# 'import re' permite sanitizar o nome da pasta a partir do nome do arquivo SQL.
+import re
+
+# 'import pandas as pd' manipula as matrizes tabulares em memória RAM[cite: 1].
 import pandas as pd
 
-# 'from' importa a classe 'ConectorBancoRelacional' do núcleo, especialista em
-# desempacotar arquivos .sql pesados.
+# 'from sqlalchemy import inspect' importa a ferramenta oficial de introspecção dinâmica de esquemas[cite: 3].
+from sqlalchemy import inspect
+
+# Importa o conector relacional universal atualizado do núcleo compartilhado[cite: 1].
 from src.nucleo.acesso_dados.conector_banco_relacional import ConectorBancoRelacional
 
-# 'from' navega até o submódulo de acesso a dados do núcleo compartilhado do nosso
-# projeto.
-# 'import' traz a classe 'LeitorArquivosTabulares' que construímos anteriormente,
-# aplicando o reuso de código.
+# Importa o leitor defensivo de arquivos tabulares do núcleo compartilhado[cite: 1].
 from src.nucleo.acesso_dados.leitor_arquivos import LeitorArquivosTabulares
 
-# 'logging.basicConfig' configura a aparência dos avisos no console do sistema
-# operacional.
-# 'level=logging.INFO' exibe confirmações operacionais, avisos de progresso e eventuais
-# falhas.
-# 'format' define o molde visual da mensagem: ano-mês-dia hora:minuto:segundo —
-# [GRAVIDADE] — texto da ação.
+# Importa o resolvedor semântico que casa as tabelas extraídas com as entidades canônicas.
+from src.etapas.fase_02_exploracao.adaptadores.resolvedor_semantico import ResolvedorSemantico
+
+# Importa o gerenciador de registro de datasets do núcleo compartilhado.
+from src.nucleo.registro_datasets.gerenciador_datasets import GerenciadorDatasets
+
+# 'logging.basicConfig' parametriza a formatação dos registros operacionais no terminal[cite: 1].
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s — [%(levelname)s] — %(message)s",
 )
 
 
-# 'class' é a palavra-chave que declara um novo molde estrutural orientado a objetos.
-# 'OrquestradorIngestao' expressa com precisão semântica a responsabilidade única da
-# classe: orquestrar a Fase 1.
+# 'class OrquestradorIngestao' centraliza a coordenação da Fase 1 da esteira[cite: 1].
 class OrquestradorIngestao:
-    """Classe responsável por coordenar a extração, conversão e auditoria de dados
-    brutos.
-    """
+    """Classe responsável por coordenar a extração, conversão e isolamento de dados brutos[cite: 1]."""
 
-    # 'def' define o método especial construtor '__init__', executado no momento da
-    # instanciação da classe.
-    # 'self' referencia a própria instância que está sendo criada na memória RAM.
-    # 'diretorio_raiz: Path' exige receber o caminho base onde repousa o nosso projeto.
-    # '-> None' atesta formalmente que o método inicializador não retorna nenhum dado
-    # para quem o chamou.
-    def __init__(self, diretorio_raiz: Path) -> None:
-        """Inicializa o orquestrador configurando os ponteiros de diretórios oficiais.
+    # 'def __init__(...)' constrói o orquestrador mapeando os diretórios oficiais de entrada e saída[cite: 1].
+    def __init__(self, diretorio_raiz: Path, nome_dataset: str | None = None) -> None:
+        """Inicializa o orquestrador configurando os ponteiros de diretórios oficiais[cite: 1].
 
         Args:
-            diretorio_raiz (Path): Caminho absoluto da pasta raiz do projeto de dados.
+            diretorio_raiz (Path): Caminho absoluto da pasta raiz do projeto de dados[cite: 1].
+            nome_dataset (str | None, opcional): Nome do dataset alvo desta execução.
+                Quando informado, apenas o dump correspondente é processado e a extração
+                é gravada exclusivamente na subpasta deste dataset, evitando a colisão
+                entre múltiplas PMEs carregadas.
         """
-        # 'self.diretorio_raiz' armazena o caminho base na memória interna do próprio
-        # objeto.
+        # Armazena o endereço físico base do projeto em memória[cite: 1].
         self.diretorio_raiz = diretorio_raiz
 
-        # O operador de barra '/' une caminhos de forma segura tanto no Windows quanto
-        # no Linux via Pathlib.
-        # 'self.pasta_sql' aponta para o diretório de arquivos de backup pesados do ERP.
+        # Aponta para o diretório onde residem os arquivos de backup brutos (.sql)[cite: 1].
         self.pasta_sql = self.diretorio_raiz / "dados" / "brutos" / "sql"
 
-        # 'self.pasta_csv' aponta para o diretório de arquivos delimitados e tabelas
-        # extraídas.
+        # Aponta para a raiz do diretório de arquivos delimitados (.csv)[cite: 1].
         self.pasta_csv = self.diretorio_raiz / "dados" / "brutos" / "csv"
 
-        # Aplicamos o padrão de Composição de Objetos: instanciamos os especialistas do
-        # núcleo como ferramentas.
-        # 'self.leitor_csv' recebe a instância da ferramenta de leitura de arquivos
-        # planos.
-        self.leitor_csv = LeitorArquivosTabulares()
+        # Armazena o dataset alvo desta execução (None = processa todos os dumps presentes).
+        self.nome_dataset = nome_dataset
 
-        # 'self.conector_sql' recebe a ferramenta especialista em bancos de dados
-        # relacionais e dumps DDL/DML.
+        # Composição com os especialistas do núcleo compartilhado[cite: 1].
+        self.leitor_csv = LeitorArquivosTabulares()
         self.conector_sql = ConectorBancoRelacional(tamanho_lote=50_000)
 
-        # 'mkdir(parents=True, exist_ok=True)' garante a criação física das pastas caso
-        # ainda não existam no disco.
+        # Garante defensivamente que as pastas existam fisicamente no disco[cite: 1].
         self.pasta_sql.mkdir(parents=True, exist_ok=True)
         self.pasta_csv.mkdir(parents=True, exist_ok=True)
 
-        # Emite um log informativo no console confirmando a prontidão da esteira de
-        # ingestão.
         logging.info(
-            "Orquestrador de Ingestão ativo. SQL: %s | CSV: %s",
+            "Orquestrador de Ingestão ativo. SQL: %s | CSV: %s | Dataset alvo: %s",
             self.pasta_sql.name,
             self.pasta_csv.name,
+            self.nome_dataset or "TODOS",
         )
 
-    # 'def' define o método para simular e gerar dados sintéticos de teste caso as
-    # pastas estejam vazias.
-    # '-> List[Path]' avisa que a função devolverá uma lista contendo os caminhos dos
-    # arquivos gerados.
-    def criar_dados_sinteticos_erp(self) -> list[Path]:
-        """Gera bases sintéticas realistas de ERP (clientes, pedidos e financeiro) para
-        testes práticos.
+    # 'def _gerar_nome_pasta_banco(...)' extrai um identificador amigável a partir do nome do arquivo SQL.
+    def _gerar_nome_pasta_banco(self, nome_arquivo_sql: str) -> str:
+        """Limpa o nome do dump removendo carimbos de data para gerar o namespace da pasta.
+
+        Exemplo: 'MERCADO_VENCEDOR_20261005_120000.sql' -> 'mercado_vencedor'.
+        """
+        nome_base = Path(nome_arquivo_sql).stem.lower()
+        # Remove sufixos numéricos típicos de timestamps de backup (_20261005_120000)
+        nome_limpo = re.sub(r"_\d{8}(?:_\d+)?$", "", nome_base)
+        return nome_limpo if nome_limpo else nome_base
+
+    # 'def executar_fase_ingestao(...)' coordena o ciclo completo da Fase 1 com isolamento de diretório[cite: 1].
+    def executar_fase_ingestao(self) -> Dict[str, pd.DataFrame]:
+        """Executa o ciclo da Fase 01: descobre, restaura e isola as tabelas do dump em subpasta própria[cite: 1].
 
         Returns:
-            List[Path]: Lista de objetos Path contendo os endereços dos arquivos CSV
-            criados.
+            Dict[str, pd.DataFrame]: Dicionário com as tabelas do ERP carregadas na memória RAM[cite: 1].
         """
-        # Emite log avisando que o gerador de dados didáticos de ERP foi acionado.
-        logging.info(
-            "Gerando massa de dados sintética de ERP para viabilizar os testes da"
-            "esteira..."
-        )
+        logging.info("=== INICIANDO EXECUÇÃO DA FASE 01: INGESTÃO E ISOLAMENTO DE DADOS ===")
 
-        # 'dados_clientes' é um dicionário Python ('{}') contendo listas ('[]')
-        # simulando a tabela 'clientes'.
-        dados_clientes: dict[str, list] = {
-            "id_cliente": [101, 102, 103, 104, 105, 106, 107, 108],
-            "nome_fantasia": [
-                "Padaria Estrela",
-                "Mercado Bom Preço",
-                "Auto Peças Silva",
-                "Restaurante Sabor",
-                "Farmácia Central",
-                "Oficina São Jorge",
-                "Lanchonete União",
-                "Materiais Construção Real",
-            ],
-            "segmento": [
-                "Alimentação",
-                "Varejo",
-                "Automotivo",
-                "Alimentação",
-                "Saúde",
-                "Automotivo",
-                "Alimentação",
-                "Construção",
-            ],
-            "limite_credito": [
-                15000.0,
-                50000.0,
-                30000.0,
-                12000.0,
-                45000.0,
-                20000.0,
-                8000.0,
-                60000.0,
-            ],
-            "dias_prazo_pagamento": [30, 45, 28, 15, 60, 30, 14, 45],
-        }
-
-        # 'dados_pedidos' é um dicionário contendo as transações comerciais simuladas de
-        # vendas do ERP.
-        dados_pedidos: dict[str, list] = {
-            "id_pedido": [1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010],
-            "id_cliente": [101, 102, 101, 103, 104, 105, 102, 106, 107, 108],
-            "data_pedido": [
-                "2026-01-10",
-                "2026-01-12",
-                "2026-01-15",
-                "2026-01-18",
-                "2026-01-20",
-                "2026-01-22",
-                "2026-01-25",
-                "2026-01-28",
-                "2026-02-01",
-                "2026-02-05",
-            ],
-            "valor_total": [
-                3500.50,
-                12800.00,
-                4200.00,
-                8900.20,
-                1500.00,
-                22000.00,
-                9500.00,
-                3100.00,
-                980.00,
-                45000.00,
-            ],
-            "status_pagamento": [
-                "Pago",
-                "Pago",
-                "Atrasado",
-                "Pago",
-                "Atrasado",
-                "Pago",
-                "Pago",
-                "Inadimplente",
-                "Pago",
-                "Atrasado",
-            ],
-            # 'inadimplente': variável alvo binária (0 = Bom Pagador, 1 =
-            # Calote/Inadimplência).
-            "inadimplente": [0, 0, 1, 0, 1, 0, 0, 1, 0, 1],
-        }
-
-        # 'pd.DataFrame' converte as estruturas de dicionário em matrizes tabulares
-        # bidimensionais do pandas.
-        tabela_clientes = pd.DataFrame(dados_clientes)
-        tabela_pedidos = pd.DataFrame(dados_pedidos)
-
-        # Monta os caminhos físicos onde os arquivos didáticos serão gravados dentro da
-        # pasta de CSV bruto.
-        caminho_csv_clientes = self.pasta_csv / "erp_clientes.csv"
-        caminho_csv_pedidos = self.pasta_csv / "erp_pedidos_vendas.csv"
-
-        # '.to_csv' grava as matrizes no disco; 'index=False' impede a criação de
-        # colunas de índices desnecessárias.
-        tabela_clientes.to_csv(caminho_csv_clientes, index=False)
-        tabela_pedidos.to_csv(caminho_csv_pedidos, index=False)
-
-        # Emite log confirmando a gravação dos datasets sintéticos no disco.
-        logging.info("Bases de teste gravadas com sucesso em: %s", self.pasta_csv)
-
-        # 'lista_arquivos' reúne os caminhos em uma lista estruturada do Python ('[]').
-        lista_arquivos = [caminho_csv_clientes, caminho_csv_pedidos]
-
-        # 'return' devolve a lista com os arquivos criados para o pipeline de execução.
-        return lista_arquivos
-
-    # 'def' define o método central de execução de toda a Fase 01.
-    # '-> Dict[str, pd.DataFrame]' documenta que o retorno será um dicionário onde cada
-    # chave é o nome da tabela
-    # e o valor é o DataFrame do pandas carregado e pronto para a Fase 02.
-    def executar_fase_ingestao(self) -> dict[str, pd.DataFrame]:
-        """Executa o ciclo completo da Fase 01: descobre, converte e carrega as
-        entidades do ERP.
-
-        Returns:
-            Dict[str, pd.DataFrame]: Dicionário contendo as tabelas do ERP carregadas em
-            memória.
-        """
-        # Emite log marcando o início oficial da execução da Fase 01.
-        logging.info("=== INICIANDO EXECUÇÃO DA FASE 01: INGESTÃO DE DADOS ===")
-
-        # 'self.pasta_sql.glob("*.sql")' faz uma varredura buscando qualquer arquivo que
-        # termine com '.sql'.
-        # 'list()' converte o iterador retornado em uma lista manipulável do Python.
+        # 1. Varredura dos arquivos de backup SQL (.sql)[cite: 1].
         arquivos_sql_encontrados = list(self.pasta_sql.glob("*.sql"))
 
-        # 'if' avalia se encontramos algum arquivo de backup SQL depositado no
-        # diretório.
+        # FILTRO POR DATASET: quando um dataset alvo é informado, descarta os dumps que
+        # não correspondem a ele, impedindo que a extração contamine a base de outra PME.
+        if self.nome_dataset:
+            arquivos_sql_encontrados = [
+                arquivo
+                for arquivo in arquivos_sql_encontrados
+                if self._gerar_nome_pasta_banco(arquivo.name) == self.nome_dataset
+            ]
+            if not arquivos_sql_encontrados:
+                logging.warning(
+                    "Nenhum dump SQL corresponde ao dataset '%s'. Verifique o upload em: %s",
+                    self.nome_dataset,
+                    self.pasta_sql,
+                )
+
+        pasta_destino_efetiva = self.pasta_csv
+
         if arquivos_sql_encontrados:
-            # Pega o primeiro arquivo .sql da lista para processar.
-            arquivo_sql = arquivos_sql_encontrados[0]
-            # Define o caminho do banco SQLite temporário local que servirá de ponte
-            # relacional.
-            caminho_banco_temp = self.pasta_sql / "banco_intermediario_erp.db"
+            for arquivo_sql in arquivos_sql_encontrados:
+                # Cria a pasta isolada com o nome do banco de dados (ex.: dados/brutos/csv/mercado_vencedor/)
+                nome_subpasta = self._gerar_nome_pasta_banco(arquivo_sql.name)
+                pasta_banco_isolada = self.pasta_csv / nome_subpasta
+                pasta_banco_isolada.mkdir(parents=True, exist_ok=True)
+                pasta_destino_efetiva = pasta_banco_isolada
 
-            # Utiliza a ferramenta do núcleo para reconstruir a estrutura do banco
-            # relacional a partir do dump.
-            motor_sql = self.conector_sql.reconstruir_banco_sqlite(
-                arquivo_sql, caminho_banco_temp
-            )
+                logging.info(
+                    "Dump identificado: %s. Isolando extração em: %s...",
+                    arquivo_sql.name,
+                    pasta_banco_isolada.relative_to(self.diretorio_raiz),
+                )
 
-            # Exporta a tabela transacional de pedidos para a pasta de CSV bruto de
-            # forma fatiada (chunks).
-            caminho_destino_pedidos = self.pasta_csv / "erp_pedidos_vendas.csv"
-            self.conector_sql.exportar_tabela_para_csv(
-                motor_sql, "pedidos", caminho_destino_pedidos
-            )
+                caminho_banco_temp = self.pasta_sql / f"{arquivo_sql.stem}_intermediario.db"
 
-        # 'self.pasta_csv.glob("*.csv")' faz uma varredura para localizar todos os
-        # arquivos CSV existentes.
-        arquivos_csv_encontrados = list(self.pasta_csv.glob("*.csv"))
+                # Reconstrói a base local SQLite em streaming com o ConectorBancoRelacional
+                motor_sql = self.conector_sql.reconstruir_banco_sqlite(
+                    caminho_script_sql=arquivo_sql,
+                    caminho_banco_sqlite=caminho_banco_temp,
+                )
 
-        # 'if not' verifica defensivamente: se a pasta de CSV estiver completamente
-        # vazia, geramos dados de teste.
-        if not arquivos_csv_encontrados:
-            logging.warning(
-                "Nenhum dado encontrado em dados/brutos/. Gerando dados sintéticos"
-                "automáticos..."
-            )
-            # Invoca o método auxiliar de criação sintética para não interromper a
-            # esteira analítica.
-            arquivos_csv_encontrados = self.criar_dados_sinteticos_erp()
+                # Introspecção dinâmica de todas as tabelas contidas no dump[cite: 3]
+                inspetor = inspect(motor_sql)
+                tabelas_no_banco = inspetor.get_table_names()
+                logging.info("Tabelas identificadas no dump (%d entidades): %s", len(tabelas_no_banco), tabelas_no_banco[:5])
 
-        # 'tabelas_carregadas' é um dicionário vazio que receberá as matrizes prontas
-        # para a Fase 02.
-        tabelas_carregadas: dict[str, pd.DataFrame] = {}
+                # Exporta cada tabela encontrada exclusivamente para a subpasta isolada do banco[cite: 1, 3]
+                for nome_tabela in tabelas_no_banco:
+                    caminho_csv = pasta_banco_isolada / f"erp_{nome_tabela.lower()}.csv"
+                    self.conector_sql.exportar_tabela_para_csv(
+                        motor_banco=motor_sql,
+                        nome_tabela=nome_tabela,
+                        caminho_csv_destino=caminho_csv,
+                    )
 
-        # 'for' itera por cada arquivo CSV localizado no diretório de dados brutos.
+        # 2. Varredura das tabelas CSV presentes na pasta isolada[cite: 1]
+        arquivos_csv_encontrados = sorted(list(pasta_destino_efetiva.glob("*.csv")))
+        tabelas_carregadas: Dict[str, pd.DataFrame] = {}
+
         for caminho_arquivo in arquivos_csv_encontrados:
-            # 'caminho_arquivo.stem' extrai apenas o nome do arquivo sem a extensão
-            # (ex.: 'erp_clientes').
             nome_entidade = caminho_arquivo.stem
-
-            # Utiliza o leitor de arquivos do núcleo para realizar a leitura defensiva
-            # na memória.
             dataframe_lido = self.leitor_csv.carregar_tabela(caminho_arquivo)
-
-            # Armazena a tabela lida no dicionário sob o nome da entidade
-            # correspondente.
             tabelas_carregadas[nome_entidade] = dataframe_lido
 
-            # Emite log detalhando o volume de registros (linhas) e atributos (colunas)
-            # incorporados.
-            logging.info(
-                "Entidade '%s' validada com sucesso: %d registros e %d atributos.",
-                nome_entidade,
-                dataframe_lido.shape[0],
-                dataframe_lido.shape[1],
-            )
-
-        # Emite log confirmando a conclusão bem-sucedida da Fase 01.
         logging.info(
-            "=== FASE 01 CONCLUÍDA: %d ENTIDADES PRONTAS PARA ANÁLISE EXPLORATÓRIA ===",
+            "=== FASE 01 CONCLUÍDA: %d ENTIDADES ISOLADAS EM '%s' ===",
             len(tabelas_carregadas),
+            pasta_destino_efetiva.name,
         )
 
-        # 'return' entrega o dicionário com todas as matrizes para quem disparou o
-        # orquestrador.
+        # 3. ATUALIZAÇÃO DO REGISTRO DE DATASETS (agnosticidade e rastreabilidade):
+        # Persiste as entidades descobertas e o resultado do matching semântico para que
+        # o frontend consiga exibir a cobertura canônica do dataset e o humano possa
+        # ensinar mapeamentos ausentes.
+        self._atualizar_registro_dataset(pasta_destino_efetiva, tabelas_carregadas)
+
         return tabelas_carregadas
 
+    def _atualizar_registro_dataset(self, pasta_dados: Path, tabelas_carregadas: Dict[str, pd.DataFrame]) -> None:
+        """Persiste no registro de datasets as entidades descobertas e o matching semântico.
 
-# '__name__ == "__main__"' é o padrão do Python que permite executar este arquivo
-# diretamente via terminal.
+        Args:
+            pasta_dados (Path): Pasta onde residem os CSVs extraídos do dataset.
+            tabelas_carregadas (Dict[str, pd.DataFrame]): Tabelas carregadas em memória.
+        """
+        gerenciador = GerenciadorDatasets(diretorio_raiz=self.diretorio_raiz)
+        nome_dataset = self.nome_dataset or pasta_dados.name
+        registro = gerenciador.obter_ou_criar(nome_dataset)
+
+        # Grava as entidades tabulares efetivamente extraídas.
+        registro.tabelas = sorted(tabelas_carregadas.keys())
+        registro.marcar_fase("01", "concluida")
+
+        # Executa o matching semântico para mapear as entidades canônicas do negócio.
+        resolvedor = ResolvedorSemantico()
+        matching: Dict[str, str | None] = {}
+        colunas_semanticas: Dict[str, Dict[str, str | None]] = {}
+
+        for entidade_canonica in resolvedor.SINONIMOS_TABELAS:
+            caminho_encontrado = resolvedor.localizar_arquivo_tabela(pasta_dados, entidade_canonica)
+            matching[entidade_canonica] = caminho_encontrado.stem if caminho_encontrado else None
+
+            if caminho_encontrado:
+                cabecalho = list(tabelas_carregadas.get(caminho_encontrado.stem, pd.DataFrame()).columns)
+                colunas_semanticas[caminho_encontrado.stem] = {
+                    papel: resolvedor.resolver_coluna(cabecalho, papel)
+                    for papel in resolvedor.SINONIMOS_COLUNAS
+                }
+
+        registro.matching_semantico = matching
+        registro.colunas_semanticas = colunas_semanticas
+
+        encontrados = sum(1 for valor in matching.values() if valor)
+        registro.registrar_observacao(
+            f"Fase 01 concluída: {len(registro.tabelas)} entidades extraídas, "
+            f"{encontrados}/{len(matching)} entidades canônicas mapeadas."
+        )
+
+        gerenciador.salvar(registro)
+        logging.info(
+            "Registro do dataset '%s' atualizado — %d/%d entidades canônicas mapeadas.",
+            nome_dataset,
+            encontrados,
+            len(matching),
+        )
+
+
+# Bloco de execução direta caso o arquivo seja chamado isoladamente[cite: 1].
 if __name__ == "__main__":
-    # '__file__' aponta para este arquivo atual; '.resolve()' gera o caminho absoluto no
-    # sistema operacional.
-    # '.parent' sobe um nível: 'fase_01_ingestao' -> 'etapas' -> 'src' -> raiz do
-    # repositório.
     raiz_do_projeto = Path(__file__).resolve().parent.parent.parent.parent
-
-    # Instancia a nossa classe de orquestração passando a raiz física calculada.
     orquestrador = OrquestradorIngestao(diretorio_raiz=raiz_do_projeto)
-
-    # Executa a esteira da Fase 01 e recebe as tabelas prontas.
     dados_ingeridos = orquestrador.executar_fase_ingestao()
