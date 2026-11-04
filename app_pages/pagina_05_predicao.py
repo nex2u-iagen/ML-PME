@@ -135,6 +135,15 @@ def main() -> None:
             with colp2:
                 st.metric("Tarefa", problema_info["tipo"])
             st.divider()
+            # Aviso quando o tipo de tarefa não é classificação de risco de crédito.
+            if problema_info["tipo"] != "classificacao":
+                st.warning(
+                    f"O formulário atual é para **classificação de risco de crédito** "
+                    f"(6 campos do ERP), mas o problema vinculado é **{problema_info['tipo']}**: "
+                    f"{problema_info['pergunta'] or 'sem pergunta definida'}. "
+                    "Os campos abaixo podem não corresponder ao modelo treinado.",
+                    icon=":material/warning:",
+                )
     elif nome:
         col_info, col_btn = st.columns([3, 1])
         with col_info:

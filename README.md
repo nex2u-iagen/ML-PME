@@ -254,6 +254,8 @@ PYTHONPATH=$PWD uv run streamlit run src/app/app.py --server.port 8503
 uv run python -m scripts.executores_projeto.servir_api
 ```
 
+> ⚠️ **A API :8000 é obrigatória para a página de Predição.** Sem ela, o formulário fica bloqueado e não é possível gerar predições. A autenticação usa Bearer JWT (usuário `analista_credito`, senha do `.env`).
+
 ### Funcionalidades do Frontend Operacional (porta 8502)
 
 1. **Ingestão** — Upload de CSVs/.sql, criação de dataset, execução da Fase 01. Exibe linhas × colunas dos CSVs brutos (validação de tamanho).

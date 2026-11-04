@@ -1,7 +1,7 @@
 {
   "nome": "mercadinho-v4",
   "criado_em": "2026-11-03T13:55:25+00:00",
-  "atualizado_em": "2026-11-03T23:24:42+00:00",
+  "atualizado_em": "2026-11-03T23:26:49+00:00",
   "arquivos_origem": [
     "mercadinho-v4.sql"
   ],
@@ -350,35 +350,38 @@
       "semente": 42,
       "numero_particoes": 5
     },
-    "criado_em": "2026-11-03T23:24:41+00:00"
+    "criado_em": "2026-11-03T23:25:55+00:00"
   },
   "status_fases": {
     "01": "pendente",
     "02": "pendente",
     "03": "concluida",
-    "04": "pendente",
-    "05": "pendente"
+    "04": "concluida",
+    "05": "concluida"
   },
   "top3": [
-    "02_KMeans_k4",
-    "01_KMeans_k3",
-    "03_KMeans_k5"
+    "01_Baseline_Dummy",
+    "04_Hist_Gradient_Boosting",
+    "03_Random_Forest"
   ],
   "metricas_top3": {
-    "02_KMeans_k4": {
-      "silhueta": 0.6744,
-      "inercia": 2.6124,
-      "numero_grupos": 4.0
+    "01_Baseline_Dummy": {
+      "r2": -0.6571,
+      "rmse": 3.3984,
+      "mae": 2.64,
+      "mape": 90.5303
     },
-    "01_KMeans_k3": {
-      "silhueta": 0.6063,
-      "inercia": 8.4318,
-      "numero_grupos": 3.0
+    "04_Hist_Gradient_Boosting": {
+      "r2": -0.6571,
+      "rmse": 3.3984,
+      "mae": 2.64,
+      "mape": 90.5303
     },
-    "03_KMeans_k5": {
-      "silhueta": 0.6043,
-      "inercia": 1.6763,
-      "numero_grupos": 5.0
+    "03_Random_Forest": {
+      "r2": -0.9249,
+      "rmse": 3.6627,
+      "mae": 2.745,
+      "mape": 97.9167
     }
   },
   "campeao": "03_Random_Forest",
@@ -409,6 +412,8 @@
     "[2026-11-03T22:27:36+00:00] Fase 01 concluída: 150 entidades extraídas, 6/6 entidades canônicas mapeadas.",
     "[2026-11-03T23:24:30+00:00] Problema de negócio vinculado: 'previsao_demanda_produto' — Quanto de cada produto precisamos repor no próximo ciclo de compra?. Fases reiniciadas para nova execução.",
     "[2026-11-03T23:24:36+00:00] Fase 03 concluída com o problema 'previsao_demanda_produto' (regressao).",
-    "[2026-11-03T23:24:42+00:00] Fase 03 concluída com o problema 'previsao_demanda_produto' (regressao)."
+    "[2026-11-03T23:24:42+00:00] Fase 03 concluída com o problema 'previsao_demanda_produto' (regressao).",
+    "[2026-11-03T23:25:56+00:00] Fase 04 concluída: campeão técnico '01_Baseline_Dummy' (r2=-0.6571).",
+    "[2026-11-03T23:26:39+00:00] Campeão eleito pelo humano: '03_Random_Forest' entre 01_Baseline_Dummy, 04_Hist_Gradient_Boosting, 03_Random_Forest."
   ]
 }
